@@ -22,7 +22,6 @@
         <module>gate-agent</module>
         <module>central</module>
         <module>simulators/turnstile-sim</module>
-        <module>simulators/hr-sim</module>
     </modules>
 
     <properties>

@@ -8,4 +8,4 @@ tmc:
 
 logging:
   level:
-    com.tmc: DEBUG
+    "[com.tmc]": DEBUG

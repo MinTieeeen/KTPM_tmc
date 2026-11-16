@@ -41,26 +41,20 @@ docs/
 │   │   ├── turnstile/              G2
 │   │   ├── localstore/             G3
 │   │   ├── sync/                   G4
-│   │   └── guard/                  G5
+│   │   └── guard/                  G5 (rút gọn)
 │   ├── central/
 │   │   ├── ingestion/              C1
 │   │   ├── employee/               C2
-│   │   ├── station/                C3
-│   │   ├── period/                 C4 (Could)
-│   │   ├── hrpayroll/              C5 (Could)
-│   │   ├── reporting/              C6
-│   │   ├── iam/                    C7
-│   │   ├── audit/                  C8
-│   │   └── config/                 C9 (Could)
+│   │   ├── station/                C3 (tối thiểu)
+│   │   └── iam/                    C7 (đăng nhập, vai trò EMPLOYEE/ADMIN)
 │   ├── web/
 │   │   ├── shared/
+│   │   ├── auth/                   màn hình đăng nhập dùng chung cho Portal và Admin
 │   │   ├── kiosk/
-│   │   ├── guard/
 │   │   ├── portal/
-│   │   └── admin/
+│   │   └── admin/                  (rút gọn)
 │   └── simulators/
-│       ├── turnstile-sim/
-│       └── hr-sim/                 (Could)
+│       └── turnstile-sim/
 ├── 02-spec/                        cùng cấu trúc con như 01-analysis
 ├── 03-api/                         cùng cấu trúc con như 01-analysis
 └── 04-test/                        cùng cấu trúc con như 01-analysis
@@ -79,19 +73,15 @@ docs/04-test/gate-agent/access/test-plan.md   (+ test-report.md)
 |---|---|---|---|
 | `sync-contract` | `sync-contract/` | BE-2 | Must |
 | `gate-agent/access`, `turnstile`, `localstore`, `sync` | `gate-agent/src/main/java/com/tmc/gate/<module>` | BE-1 | Must |
-| `gate-agent/guard` | `.../gate/guard` | BE-1 | Should |
-| `central/ingestion`, `employee`, `station` | `central/src/main/java/com/tmc/central/<module>` | BE-2 | Must |
-| `central/reporting`, `iam`, `audit` | như trên | BE-2 | Should |
-| `central/period`, `hrpayroll`, `config` | như trên | BE-2 | Could |
+| `gate-agent/guard` | `.../gate/guard` (chỉ `GET /guard/pending`) | BE-1 | Should (MVP) |
+| `central/ingestion`, `employee`, `station`, `iam` | `central/src/main/java/com/tmc/central/<module>` | BE-2 | Must |
 | `web/shared`, `web/kiosk` | `web/src/shared`, `web/src/features/kiosk` | FE-1 | Must |
-| `web/guard` | `web/src/features/guard` | FE-1 | Should |
-| `web/portal` | `web/src/features/portal` | FE-2 | Must |
-| `web/admin` | `web/src/features/admin` | FE-2 | Should |
+| `web/auth`, `web/portal` | `web/src/features/auth`, `web/src/features/portal` | FE-2 | Must |
+| `web/admin` | `web/src/features/admin` (tab Nhân viên, tab Trạm) | FE-2 | Should (MVP) |
 | `simulators/turnstile-sim` | `simulators/turnstile-sim` | BE-2 | Must |
-| `simulators/hr-sim` | `simulators/hr-sim` | BE-2 | Could |
 | `system` | `deploy/`, `tests/` | BE-1 (hạ tầng), DOC (kịch bản demo) | Must |
 
-Phần mức **Could** chỉ cần tài liệu trong `01-analysis` (để báo cáo nêu được là chưa làm và vì sao). Ba bước còn lại chỉ làm nếu nhóm quyết định hiện thực.
+Các component C4, C5, C6, C8, C9 (chốt kỳ, HR/Payroll, báo cáo, audit, cấu hình), Guard Console UI và `hr-sim` **nằm ngoài phạm vi MVP** nên không có thư mục. Lý do không hiện thực được ghi một lần trong `01-analysis/system/analysis.md`.
 
 ---
 
@@ -159,11 +149,12 @@ Nội dung theo loại hợp đồng:
 | Hợp đồng | Người viết | Người duyệt |
 |---|---|---|
 | `03-api/sync-contract` | BE-2 | BE-1 |
-| `03-api/gate-agent/access` (`/scan`, `/status`), `03-api/gate-agent/sync` (`/admin/simulate-offline`), `03-api/gate-agent/guard` | BE-1 | FE-1 |
-| `03-api/central/employee` (`/portal/qr-token`, `/employees`), `03-api/central/station`, `03-api/central/reporting`, `03-api/central/iam`, `03-api/central/audit` | BE-2 | FE-2 |
+| `03-api/gate-agent/access` (`/scan`, `/status`), `03-api/gate-agent/sync` (`/admin/simulate-offline`), `03-api/gate-agent/guard` (`/guard/pending`) | BE-1 | FE-1 |
+| `03-api/central/employee` (`/portal/qr-token`, `/employees`), `03-api/central/station` (`/stations`), `03-api/central/iam` (`/auth/login`, `/auth/me`) | BE-2 | FE-2 |
 | `03-api/central/ingestion` (`/sync/*`) | BE-2 | BE-1 |
 | `03-api/simulators/turnstile-sim` | BE-2 | BE-1 |
-| `03-api/web/shared` (client và component dùng chung) | FE-1 | FE-2 |
+| `03-api/web/shared` (client và component dùng chung, cách gắn token `Authorization`) | FE-1 | FE-2 |
+| `03-api/web/auth` (component đăng nhập, lưu và gửi JWT, xử lý 401) | FE-2 | FE-1 |
 
 **Điều kiện chuyển bước:** người duyệt đã đồng ý trên PR. Từ thời điểm này hợp đồng **được đóng băng**. Muốn đổi thì mở PR riêng, người dùng hợp đồng phải duyệt, và ghi lại lịch sử thay đổi ở cuối `api.md`.
 
@@ -204,10 +195,10 @@ Thư mục `system` trong mỗi bước dành cho những gì không thuộc ri�
 
 | Thư mục | Nội dung |
 |---|---|
-| `01-analysis/system` | Phạm vi demo tổng thể, bảng độ lệch so với báo cáo, ánh xạ component ↔ package ↔ người |
+| `01-analysis/system` | Phạm vi MVP tổng thể, các component không hiện thực và lý do, bảng độ lệch so với báo cáo, ánh xạ component ↔ package ↔ người |
 | `02-spec/system` | Luồng end-to-end F1 (quét), F2 (đồng bộ) ghép từ các phần; hạ tầng demo (compose, mạng `wan`/`lan`, biến môi trường) |
 | `03-api/system` | Bảng tổng hợp toàn bộ endpoint và cổng dịch vụ (liên kết tới `api.md` của từng phần) |
-| `04-test/system` | Kịch bản demo D1–D6, kịch bản E2E T1–T11, load test T9, kiểm thử kiến trúc A1–A3, mốc tích hợp INT-1..3; báo cáo kết quả tổng hợp |
+| `04-test/system` | Kịch bản demo D1–D6, kịch bản E2E T1–T8, T10, T11, load test T9, kiểm thử kiến trúc A1–A3, mốc tích hợp INT-1..3; báo cáo kết quả tổng hợp |
 
 ---
 
@@ -217,10 +208,10 @@ Các phần **không** cần làm tuần tự với nhau; chỉ cần mỗi ph�
 
 | Thời gian | Bước cần xong | Lý do |
 |---|---|---|
-| **Tuần 0** | `01-analysis` của mọi phần Must; `03-api` của `sync-contract`, `gate-agent/access`, `central/employee`, `central/ingestion`, `simulators/turnstile-sim` | Đây là các hợp đồng mà người khác phải chờ |
+| **Tuần 0** | `01-analysis` của mọi phần; `03-api` của `sync-contract`, `gate-agent/access`, `central/employee`, `central/iam`, `central/ingestion`, `simulators/turnstile-sim` | Đây là các hợp đồng mà người khác phải chờ |
 | **Tuần 1** | `02-spec`, `04-test` (test-plan) của các phần Must còn lại → code luồng Must | Mốc INT-1: luồng F1 chạy end-to-end |
 | **Tuần 2** | `03-api` của `gate-agent/guard`, `central/station`; code offline và độ tin cậy; `test-report` của các phần Must | Mốc INT-2: T2, T3, T5, T7, T8, T10, T11 |
-| **Tuần 3** | Các phần Should; `04-test/system/test-report.md` | Mốc INT-3: đóng băng code, demo, phần 9 |
+| **Tuần 3** | `web/admin` rút gọn, load test T9; `04-test/system/test-report.md` | Mốc INT-3: đóng băng code, demo, phần 9 |
 
 Một phần nhỏ (ví dụ `web/shared`) có thể làm từ `01-analysis` tới `03-api` trong cùng một PR, nhưng không được bỏ qua bước.
 

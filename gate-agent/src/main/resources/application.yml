@@ -26,9 +26,6 @@ spring:
     serialization:
       write-dates-as-timestamps: false
     default-property-inclusion: non_null
-  mvc:
-    async:
-      request-timeout: -1   # SSE cho Guard Console (G5)
   lifecycle:
     timeout-per-shutdown-phase: 10s
 
@@ -60,10 +57,6 @@ tmc:
       url: ${TURNSTILE_URL:http://localhost:9001}
       open-timeout: ${TURNSTILE_TIMEOUT_MS:800ms}          # ngân sách thời gian, mục 6.3
       status-timeout: ${TURNSTILE_STATUS_TIMEOUT_MS:200ms} # kiểm tra trạng thái trước khi kết luận (NFR-REL-02)
-
-    guard:
-      pin: ${GUARD_PIN:0000}                    # thay cho đồng bộ tài khoản bảo vệ (độ lệch 3.3)
-      min-reason-length: 10
 
     fault-injection:
       enabled: false                            # bật ở profile demo: POST /admin/simulate-offline
@@ -99,4 +92,4 @@ springdoc:
 
 logging:
   level:
-    com.tmc: INFO
+    "[com.tmc]": INFO

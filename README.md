@@ -16,19 +16,18 @@ Mã nguồn Milestone 2 của bài tập lớn Kiến trúc phần mềm (CO3017
 | G2 Turnstile Adapter | `turnstile` | `gate-agent/.../gate/turnstile` | `HttpTurnstileAdapter`, `FakeTurnstileGateway` |
 | G3 Local Store & Outbox | `localstore` | `gate-agent/.../gate/localstore` | `SqliteCredentialStore`, `SqliteScanStore`, `SqliteOutboxStore` |
 | G4 Gate Sync Agent | `sync` | `gate-agent/.../gate/sync` | `SyncClient`, `OutboxStore`, `CredentialWriter` |
-| G5 Guard Console | `guard` | `gate-agent/.../gate/guard` | SSE `/guard/events`, `ManualOpenUseCase` |
+| G5 Guard Console (rút gọn) | `guard` | `gate-agent/.../gate/guard` | `GET /guard/pending` (đối soát lượt PENDING) |
 | C1 Gate Sync & Ingestion | `ingestion` | `central/src/main/java/com/tmc/central/ingestion` | `SyncAPI`, `IngestionApi` |
 | C2 Employee & QR Management | `employee` | `central/.../central/employee` | `QrTokenSigner`, `EmployeeApi`, `QrTokenAPI` |
-| C3 Gate Station Management | `station` | `central/.../central/station` | `StationApi` |
-| C4 Adjustment & Period Closing | `period` | `central/.../central/period` | (Could) |
-| C5 HR/Payroll Adapter | `hrpayroll` | `central/.../central/hrpayroll` | `HrPayrollGateway`, `EmployeeSourceGateway` (Could) |
-| C6 Reporting & Monitoring | `reporting` | `central/.../central/reporting` | `/attendance` |
-| C7 IAM / RBAC | `iam` | `central/.../central/iam` | `AuthApi` |
-| C8 Audit Log | `audit` | `central/.../central/audit` | `AuditApi` |
-| C9 Configuration | `config` | `central/.../central/config` | `ConfigAPI` |
+| C3 Gate Station Management (tối thiểu) | `station` | `central/.../central/station` | `StationApi` |
+| C7 IAM (đăng nhập, vai trò EMPLOYEE/ADMIN) | `iam` | `central/.../central/iam` | `AuthApi`, `/auth/login`, `/auth/me` |
 | Hợp đồng Q1 ↔ Q2 | — | `sync-contract` | `EventBatch`, `BatchAck`, `SnapshotDelta`, `Heartbeat` |
-| Giao diện | — | `web` | Kiosk, Guard (đóng gói vào gate-agent); Portal giả lập, Admin (đóng gói vào central) |
-| Bộ giả lập | — | `simulators/turnstile-sim`, `simulators/hr-sim` | — |
+| Giao diện | — | `web` | Kiosk (đóng gói vào gate-agent); Portal giả lập, Admin rút gọn (đóng gói vào central) |
+| Bộ giả lập | — | `simulators/turnstile-sim` | — |
+
+C4, C5, C6, C8, C9 (chốt kỳ, HR/Payroll, báo cáo, audit, cấu hình) có trong báo cáo nhưng **không thuộc phạm vi MVP**.
+
+Tài khoản demo (seed): nhân viên `e0001` … `e0020`, quản trị `admin`; mật khẩu do migration seed quy định (xem `docs/03-api/central/iam`).
 
 Bên trong mỗi package có 4 tầng `api / application / domain / infrastructure`. `domain` là Java thuần, không phụ thuộc Spring hay `infrastructure` (kiểm tra bằng ArchUnit và Spring Modulith trong CI).
 
@@ -38,9 +37,10 @@ Bên trong mỗi package có 4 tầng `api / application / domain / infrastructu
 tmc/
 ├── pom.xml                  parent POM (Java 21, Spring Boot 3.5)
 ├── sync-contract/           thư viện DTO dùng chung
-├── gate-agent/              Q1 – G1..G5
-├── central/                 Q2 – C1..C9
-├── simulators/              turnstile-sim, hr-sim
+├── gate-agent/              Q1 – G1..G4, G5 rút gọn
+├── central/                 Q2 – C1..C3, C7
+├── simulators/              turnstile-sim
+├── docs/                    phân công và quy trình analysis → spec → api → test
 ├── web/                     React + TypeScript + Vite (hai build target: gate, central)
 ├── deploy/                  docker-compose.yml, Dockerfile, env, script demo
 ├── tests/                   e2e (T1–T11), load (k6)
@@ -66,7 +66,7 @@ mvn -pl gate-agent spring-boot:run -Dspring-boot.run.profiles=demo
 
 # Frontend (proxy tới :8081 và :8080, xem web/vite.config.ts)
 cd web && npm install && npm run dev
-# http://localhost:5173/kiosk.html?station=BD-IN-01 · /portal.html · /guard.html · /admin.html
+# http://localhost:5173/kiosk.html?station=BD-IN-01 · /portal.html · /admin.html
 ```
 
 ## Chạy toàn bộ bằng Docker
@@ -78,7 +78,7 @@ docker compose -f deploy/docker-compose.yml up --build
 | Dịch vụ | Địa chỉ |
 |---|---|
 | Central (Admin, Portal giả lập, API) | http://localhost:8080 – `/admin.html`, `/portal.html`, `/swagger-ui.html` |
-| Gate Bình Dương (Kiosk, Guard) | http://localhost:8081 – `/kiosk.html?station=BD-IN-01`, `/guard.html` |
+| Gate Bình Dương (Kiosk) | http://localhost:8081 – `/kiosk.html?station=BD-IN-01`, `/status`, `/guard/pending` |
 | Gate Long An | http://localhost:8082 |
 | Turnstile sim BD / LA | http://localhost:9001, http://localhost:9002 |
 | PostgreSQL | localhost:5432 (tmc/tmc) |
@@ -90,11 +90,11 @@ docker compose -f deploy/docker-compose.yml up --build
 | `deploy/scripts/offline.sh bd` / `online.sh bd` | Ngắt / nối lại gate khỏi WAN | D4, T5, T11 |
 | `deploy/scripts/kill-gate.sh bd` | Kill -9 rồi khởi động lại gate | D6, T8 |
 | `deploy/scripts/sim.sh bd TIMEOUT` | Đổi hành vi cổng xoay giả lập | D5, T7 |
-| `deploy/scripts/gen-keys.sh` | Sinh khóa Ed25519 và RSA vào `deploy/env/secrets/` | — |
+| `deploy/scripts/gen-keys.sh` | Sinh khóa Ed25519 (QR) và RSA (JWT) vào `deploy/env/secrets/` | — |
 
 ## Các bước demo D1–D6
 
-_Bổ sung khi hoàn thành các gói Must (gói DOC-1)._
+_Bổ sung khi hoàn thành luồng MVP._
 
 ## Quy ước
 

@@ -29,7 +29,8 @@ spring:
     default-property-inclusion: non_null
   modulith:
     events:
-      # Event publication registry = outbox trung tâm (C4 → C5, Could).
+      # Event publication registry: lưu sự kiện QrCredentialChanged, StationConfigChanged, SigningKeyPublished
+      # để C1 không bỏ sót thay đổi dữ liệu tham chiếu khi khởi động lại.
       # Bảng event_publication phải được tạo trong migration của Flyway.
       republish-outstanding-events-on-restart: true
   lifecycle:
@@ -54,16 +55,20 @@ tmc:
       heartbeat-offline-after: ${HEARTBEAT_OFFLINE_AFTER:30s}
 
     settings:
-      offline-threshold: ${OFFLINE_THRESHOLD:8h}  # C9 gửi xuống gate trong snapshot
+      offline-threshold: ${OFFLINE_THRESHOLD:8h}  # gửi xuống gate trong snapshot (thay C9)
 
-    jwt:                                         # C7 (Should)
-      private-key-path: ${JWT_PRIVATE_KEY_PATH:}
-      public-key-path: ${JWT_PUBLIC_KEY_PATH:}
-      ttl: ${JWT_TTL:8h}
+    iam:                                         # C7 – đăng nhập JWT RS256 (ADR-08)
+      jwt:
+        issuer: tmc-central
+        ttl: ${JWT_TTL:8h}
+        # Khóa RSA dạng PEM – KHÔNG commit. Profile demo tự sinh nếu để trống.
+        private-key-path: ${JWT_PRIVATE_KEY_PATH:}
+        public-key-path: ${JWT_PUBLIC_KEY_PATH:}
+      password:
+        bcrypt-strength: 10
 
     demo:
-      auto-generate-keys: false
-      allow-demo-employee-header: false          # X-Demo-Employee cho Portal khi chưa có C7
+      auto-generate-keys: false                  # tự sinh khóa Ed25519 (QR) và RSA (JWT) khi trống
 
 management:
   endpoints:
@@ -83,4 +88,4 @@ springdoc:
 
 logging:
   level:
-    com.tmc: INFO
+    "[com.tmc]": INFO

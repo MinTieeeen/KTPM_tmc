@@ -35,6 +35,9 @@ services:
       args: { MODULE: central, WEB_TARGET: central }
     image: tmc/central:dev
     env_file: [env/central.env]
+    # Dùng khóa cố định (sau khi chạy scripts/gen-keys.sh): bỏ comment 2 dòng dưới
+    # env_file: [env/central.env, env/secrets/central.secrets.env]
+    # volumes: ["./env/secrets:/run/secrets:ro"]
     ports: ["8080:8080"]
     depends_on:
       postgres: { condition: service_healthy }
@@ -81,15 +84,6 @@ services:
       TURNSTILE_IDS: LA-IN-01,LA-OUT-01
     ports: ["9002:9001"]
     networks: [lan-la]
-
-  hr-sim:                     # Could – bật bằng: --profile could
-    build:
-      <<: *sim-build
-      args: { MODULE: hr-sim }
-    image: tmc/hr-sim:dev
-    ports: ["9100:9100"]
-    networks: [wan]
-    profiles: [could]
 
 networks:
   wan:

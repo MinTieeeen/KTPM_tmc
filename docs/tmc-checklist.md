@@ -4,8 +4,8 @@
 
 | Vai trò | Họ và tên | MSSV | Phạm vi | Tài liệu liên quan |
 |---|---|---|---|---|
-| **BE-1 – Backend Gate Agent** | - | - | • `gate-agent/access` (G1)<br>• `gate-agent/turnstile` (G2)<br>• `gate-agent/localstore` (G3)<br>• `gate-agent/sync` (G4)<br>• `gate-agent/guard` (G5)<br>• `system`: Docker Compose, Dockerfile, CI | `<bước>/gate-agent/*`<br>`<bước>/system` |
-| **BE-2 – Backend Central** | - | - | • `sync-contract`<br>• `central/ingestion` (C1)<br>• `central/employee` (C2)<br>• `central/station` (C3)<br>• `central/reporting` (C6)<br>• `central/iam` (C7)<br>• `central/audit` (C8)<br>• `central/period` (C4, Could)<br>• `central/hrpayroll` (C5, Could)<br>• `central/config` (C9, Could)<br>• `simulators/turnstile-sim`<br>• `simulators/hr-sim` (Could) | `<bước>/sync-contract`<br>`<bước>/central/*`<br>`<bước>/simulators/*` |
-| **FE-1 – Frontend tại cổng** | - | - | • `web/shared`<br>• `web/kiosk`<br>• `web/guard` | `<bước>/web/shared`<br>`<bước>/web/kiosk`<br>`<bước>/web/guard` |
-| **FE-2 – Frontend trung tâm** | - | - | • `web/portal`<br>• `web/admin`<br>• Cấu hình build Vite | `<bước>/web/portal`<br>`<bước>/web/admin` |
+| **BE-1 – Backend Gate Agent** | - | - | • `gate-agent/access` (G1)<br>• `gate-agent/turnstile` (G2)<br>• `gate-agent/localstore` (G3)<br>• `gate-agent/sync` (G4)<br>• `gate-agent/guard` (G5 rút gọn)<br>• `system`: Docker Compose, Dockerfile, CI | `<bước>/gate-agent/*`<br>`<bước>/system` |
+| **BE-2 – Backend Central** | - | - | • `sync-contract`<br>• `central/ingestion` (C1)<br>• `central/employee` (C2)<br>• `central/station` (C3 tối thiểu)<br>• `central/iam` (C7)<br>• `simulators/turnstile-sim` | `<bước>/sync-contract`<br>`<bước>/central/*`<br>`<bước>/simulators/turnstile-sim` |
+| **FE-1 – Frontend tại cổng** | - | - | • `web/shared`<br>• `web/kiosk` | `<bước>/web/shared`<br>`<bước>/web/kiosk` |
+| **FE-2 – Frontend trung tâm** | - | - | • `web/auth`<br>• `web/portal`<br>• `web/admin` (rút gọn)<br>• Cấu hình build Vite | `<bước>/web/auth`<br>`<bước>/web/portal`<br>`<bước>/web/admin` |
 | **DOC – Tài liệu và tích hợp báo cáo** | - | - | • Duyệt `01-analysis`<br>• Tổng hợp `04-test` vào phần 9 báo cáo<br>• README, video demo | [workflow.md](workflow.md)<br>`<bước>/system` |

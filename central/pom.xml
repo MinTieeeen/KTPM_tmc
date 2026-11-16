@@ -10,7 +10,7 @@
     </parent>
 
     <artifactId>central</artifactId>
-    <name>central - Q2 Central Quantum (C1-C9, modular monolith)</name>
+    <name>central - Q2 Central Quantum (MVP: C1, C2, C3, C7 - modular monolith)</name>
 
     <dependencies>
         <dependency>
@@ -60,8 +60,7 @@
             <artifactId>spring-modulith-starter-jpa</artifactId>
         </dependency>
 
-        <!-- C7 IAM (Should - goi C-6). Bo comment khi bat dau lam C-6, kem SecurityFilterChain
-             va cau hinh tmc.central.jwt.* trong application.yml:
+        <!-- C7 IAM: dang nhap JWT RS256 (EMPLOYEE, ADMIN); /sync/** dung API key cua gate -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
@@ -70,12 +69,6 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-        -->
 
         <dependency>
             <groupId>org.springdoc</groupId>
@@ -92,6 +85,11 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

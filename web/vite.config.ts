@@ -5,12 +5,12 @@ import react from '@vitejs/plugin-react';
 
 /**
  * Một project, hai build target (đặc tả mục 10.1, Implementation view của báo cáo):
- *   vite build --mode gate     → kiosk.html, guard.html  → gate-agent/src/main/resources/static
+ *   vite build --mode gate     → kiosk.html              → gate-agent/src/main/resources/static
  *   vite build --mode central  → portal.html, admin.html → central/src/main/resources/static
  * Khi dev (vite), mọi trang chạy chung và gọi API qua proxy.
  */
 const pages = {
-  gate: { kiosk: 'kiosk.html', guard: 'guard.html' },
+  gate: { kiosk: 'kiosk.html' },
   central: { portal: 'portal.html', admin: 'admin.html' },
 } as const;
 
@@ -48,20 +48,15 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 5173,
       proxy: {
-        // Gate Agent (G1, G5)
+        // Gate Agent (G1, G4)
         '/scan': gateUrl,
         '/status': gateUrl,
-        '/guard/': gateUrl,
         '/admin/simulate-offline': gateUrl,
-        // Central (C1–C9)
-        '/auth': centralUrl,
+        // Central (C1–C3, C7)
+        '/auth/': centralUrl,
         '/portal/': centralUrl,
         '/employees': centralUrl,
         '/stations': centralUrl,
-        '/attendance': centralUrl,
-        '/audit': centralUrl,
-        '/periods': centralUrl,
-        '/export-batches': centralUrl,
       },
     },
     test: {
