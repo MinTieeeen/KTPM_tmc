@@ -1,0 +1,11 @@
+**/target
+**/node_modules
+web/dist
+**/*.db
+**/*.db-wal
+**/*.db-shm
+deploy/env/secrets
+tests/load/results
+.git
+.idea
+.vscode

@@ -1,0 +1,50 @@
+{
+  "name": "tmc-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run build:gate && npm run build:central",
+    "build:gate": "tsc -b && vite build --mode gate",
+    "build:central": "tsc -b && vite build --mode central",
+    "preview": "vite preview",
+    "lint": "eslint .",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
+    "test": "vitest run --passWithNoTests",
+    "gen:api": "openapi-typescript http://localhost:8081/v3/api-docs -o src/shared/api/gate.schema.ts && openapi-typescript http://localhost:8080/v3/api-docs -o src/shared/api/central.schema.ts"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "5.59.16",
+    "html5-qrcode": "2.3.8",
+    "qrcode.react": "4.1.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-router-dom": "6.28.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.13.0",
+    "@testing-library/react": "16.0.1",
+    "@types/node": "22.8.6",
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
+    "@vitejs/plugin-react": "4.3.3",
+    "eslint": "9.13.0",
+    "eslint-plugin-react-hooks": "5.0.0",
+    "eslint-plugin-react-refresh": "0.4.14",
+    "globals": "15.11.0",
+    "jsdom": "25.0.1",
+    "msw": "2.6.0",
+    "openapi-typescript": "7.4.2",
+    "prettier": "3.3.3",
+    "typescript": "5.6.3",
+    "typescript-eslint": "8.12.2",
+    "vite": "5.4.10",
+    "vitest": "2.1.4"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
+  }
+}

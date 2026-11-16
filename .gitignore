@@ -1,0 +1,39 @@
+# ---- Java / Maven ----
+target/
+*.class
+*.log
+hs_err_pid*
+
+# ---- IDE ----
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
+.classpath
+.project
+.settings/
+.DS_Store
+
+# ---- Node / web ----
+node_modules/
+web/dist/
+web/.env.local
+web/.env.*.local
+*.tsbuildinfo
+
+# Bản build giao diện được sinh vào static/ của hai backend – không commit
+gate-agent/src/main/resources/static/
+central/src/main/resources/static/
+
+# ---- Dữ liệu cục bộ của Gate Agent (SQLite) ----
+*.db
+*.db-wal
+*.db-shm
+
+# ---- Secret: KHÔNG BAO GIỜ commit ----
+deploy/env/secrets/*
+!deploy/env/secrets/.gitkeep
+*.pem
+*.key
+*.p12
+.env

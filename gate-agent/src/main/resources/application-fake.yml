@@ -1,0 +1,5 @@
+# Profile fake: dùng FakeTurnstileGateway thay cho HttpTurnstileAdapter (chạy không cần turnstile-sim).
+tmc:
+  gate:
+    turnstile:
+      adapter: fake

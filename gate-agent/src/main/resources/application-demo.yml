@@ -1,0 +1,11 @@
+# Profile demo: bật giả lập lỗi và rút ngắn ngưỡng để trình diễn D4, T11.
+tmc:
+  gate:
+    sync:
+      default-offline-threshold: 2m
+    fault-injection:
+      enabled: true
+
+logging:
+  level:
+    com.tmc: DEBUG

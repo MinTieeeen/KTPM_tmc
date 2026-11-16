@@ -1,0 +1,86 @@
+# Central (Q2) – cấu hình mặc định. Ghi đè bằng biến môi trường (deploy/env/central.env).
+
+server:
+  port: ${SERVER_PORT:8080}
+  shutdown: graceful
+
+spring:
+  application:
+    name: central
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/tmc}
+    username: ${DB_USER:tmc}
+    password: ${DB_PASSWORD:tmc}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate          # lược đồ do Flyway quản lý, Hibernate chỉ kiểm tra
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  jackson:
+    time-zone: UTC
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+  modulith:
+    events:
+      # Event publication registry = outbox trung tâm (C4 → C5, Could).
+      # Bảng event_publication phải được tạo trong migration của Flyway.
+      republish-outstanding-events-on-restart: true
+  lifecycle:
+    timeout-per-shutdown-phase: 10s
+
+tmc:
+  central:
+    qr:
+      token-ttl: ${QR_TOKEN_TTL:60s}            # NFR-SEC-05
+      refresh-after: ${QR_REFRESH_AFTER:30s}    # Portal làm mới mỗi 30 s
+      key-id: ${TMC_QR_KEY_ID:k-demo}
+      # PKCS#8 base64 của khóa Ed25519 – KHÔNG commit. Profile demo tự sinh nếu để trống.
+      signing-key: ${TMC_QR_SIGNING_KEY:}
+      public-key: ${TMC_QR_PUBLIC_KEY:}
+
+    sync:
+      # API key của từng gate (thay mTLS). Định dạng: gateId=key,gateId=key
+      gate-api-keys: ${GATE_API_KEYS:gate-bd=change-me-bd,gate-la=change-me-la}
+      max-batch-size: 200
+
+    station:
+      heartbeat-offline-after: ${HEARTBEAT_OFFLINE_AFTER:30s}
+
+    settings:
+      offline-threshold: ${OFFLINE_THRESHOLD:8h}  # C9 gửi xuống gate trong snapshot
+
+    jwt:                                         # C7 (Should)
+      private-key-path: ${JWT_PRIVATE_KEY_PATH:}
+      public-key-path: ${JWT_PUBLIC_KEY_PATH:}
+      ttl: ${JWT_TTL:8h}
+
+    demo:
+      auto-generate-keys: false
+      allow-demo-employee-header: false          # X-Demo-Employee cho Portal khi chưa có C7
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,modulith
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    com.tmc: INFO

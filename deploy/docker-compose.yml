@@ -1,0 +1,102 @@
+# Hạ tầng demo (đặc tả mục 11). Chạy từ thư mục gốc repo:
+#   docker compose -f deploy/docker-compose.yml up --build
+# Mạng "wan" mô phỏng đường truyền nhà máy – trung tâm (ngắt bằng deploy/scripts/offline.sh);
+# "lan-bd", "lan-la" mô phỏng LAN/VLAN của từng nhà máy tới cổng xoay.
+
+name: tmc
+
+x-app-build: &app-build
+  context: ..
+  dockerfile: deploy/docker/app.Dockerfile
+
+x-sim-build: &sim-build
+  context: ..
+  dockerfile: deploy/docker/sim.Dockerfile
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: tmc
+      POSTGRES_USER: tmc
+      POSTGRES_PASSWORD: tmc
+    ports: ["5432:5432"]
+    volumes: ["pg-data:/var/lib/postgresql/data"]
+    networks: [wan]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tmc -d tmc"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  central:
+    build:
+      <<: *app-build
+      args: { MODULE: central, WEB_TARGET: central }
+    image: tmc/central:dev
+    env_file: [env/central.env]
+    ports: ["8080:8080"]
+    depends_on:
+      postgres: { condition: service_healthy }
+    networks: [wan]
+
+  gate-bd:
+    build:
+      <<: *app-build
+      args: { MODULE: gate-agent, WEB_TARGET: gate }
+    image: tmc/gate-agent:dev
+    env_file: [env/gate-bd.env]
+    ports: ["8081:8081"]
+    volumes: ["gate-bd-data:/data"]
+    depends_on: [central, turnstile-sim-bd]
+    networks: [wan, lan-bd]
+
+  gate-la:
+    build:
+      <<: *app-build
+      args: { MODULE: gate-agent, WEB_TARGET: gate }
+    image: tmc/gate-agent:dev
+    env_file: [env/gate-la.env]
+    ports: ["8082:8081"]
+    volumes: ["gate-la-data:/data"]
+    depends_on: [central, turnstile-sim-la]
+    networks: [wan, lan-la]
+
+  turnstile-sim-bd:
+    build:
+      <<: *sim-build
+      args: { MODULE: turnstile-sim }
+    image: tmc/turnstile-sim:dev
+    environment:
+      TURNSTILE_IDS: BD-IN-01,BD-OUT-01
+    ports: ["9001:9001"]
+    networks: [lan-bd]
+
+  turnstile-sim-la:
+    build:
+      <<: *sim-build
+      args: { MODULE: turnstile-sim }
+    image: tmc/turnstile-sim:dev
+    environment:
+      TURNSTILE_IDS: LA-IN-01,LA-OUT-01
+    ports: ["9002:9001"]
+    networks: [lan-la]
+
+  hr-sim:                     # Could – bật bằng: --profile could
+    build:
+      <<: *sim-build
+      args: { MODULE: hr-sim }
+    image: tmc/hr-sim:dev
+    ports: ["9100:9100"]
+    networks: [wan]
+    profiles: [could]
+
+networks:
+  wan:
+  lan-bd:
+  lan-la:
+
+volumes:
+  pg-data:
+  gate-bd-data:
+  gate-la-data:

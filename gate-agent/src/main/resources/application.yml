@@ -1,0 +1,102 @@
+# Gate Agent (Q1) – cấu hình mặc định. Ghi đè bằng biến môi trường (deploy/env/gate-*.env).
+# DP-17: không viết cứng ngưỡng, timeout, chu kỳ trong mã; đọc từ tmc.gate.* qua @ConfigurationProperties.
+
+server:
+  port: ${SERVER_PORT:8081}
+  shutdown: graceful
+
+spring:
+  application:
+    name: gate-agent
+  # G3 – SQLite. PRAGMA truyền qua URL (sqlite-jdbc): WAL + synchronous=FULL để ghi bền vững (INV-05).
+  datasource:
+    url: jdbc:sqlite:${SQLITE_PATH:./gate-local.db}?journal_mode=WAL&synchronous=FULL&foreign_keys=true&busy_timeout=5000
+    driver-class-name: org.sqlite.JDBC
+    hikari:
+      # Một kết nối duy nhất để mọi lệnh ghi đi tuần tự, tránh SQLITE_BUSY (tải đỉnh chỉ 2–5 lượt/giây).
+      maximum-pool-size: 1
+      minimum-idle: 1
+      pool-name: gate-sqlite
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+  jackson:
+    time-zone: UTC
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+  mvc:
+    async:
+      request-timeout: -1   # SSE cho Guard Console (G5)
+  lifecycle:
+    timeout-per-shutdown-phase: 10s
+
+tmc:
+  gate:
+    gate-id: ${GATE_ID:gate-bd}
+    factory-id: ${FACTORY_ID:BD}
+
+    qr:
+      clock-skew: ${QR_CLOCK_SKEW:30s}          # ADR-02: cho phép lệch ±30 s
+
+    central:
+      url: ${CENTRAL_URL:http://localhost:8080}
+      api-key: ${GATE_API_KEY:change-me}        # thay cho mTLS (độ lệch 3.3)
+      connect-timeout: ${CENTRAL_CONNECT_TIMEOUT:2s}
+      read-timeout: ${CENTRAL_READ_TIMEOUT:5s}
+
+    sync:
+      push-interval: ${SYNC_PUSH_INTERVAL:2s}
+      push-batch-size: ${SYNC_PUSH_BATCH_SIZE:200}
+      pull-interval: ${SYNC_PULL_INTERVAL:15s}  # phải ≤ 60 s (NFR-SEC-06)
+      heartbeat-interval: ${SYNC_HEARTBEAT_INTERVAL:10s}
+      nonce-cleanup-interval: ${NONCE_CLEANUP_INTERVAL:60s}
+      # Giá trị dự phòng khi chưa nhận được settings từ snapshot (C9 gửi xuống)
+      default-offline-threshold: ${OFFLINE_THRESHOLD:8h}
+
+    turnstile:
+      adapter: ${TURNSTILE_ADAPTER:http}        # http | fake
+      url: ${TURNSTILE_URL:http://localhost:9001}
+      open-timeout: ${TURNSTILE_TIMEOUT_MS:800ms}          # ngân sách thời gian, mục 6.3
+      status-timeout: ${TURNSTILE_STATUS_TIMEOUT_MS:200ms} # kiểm tra trạng thái trước khi kết luận (NFR-REL-02)
+
+    guard:
+      pin: ${GUARD_PIN:0000}                    # thay cho đồng bộ tài khoản bảo vệ (độ lệch 3.3)
+      min-reason-length: 10
+
+    fault-injection:
+      enabled: false                            # bật ở profile demo: POST /admin/simulate-offline
+
+# G2 – circuit breaker cho cổng xoay: mở sau 5 lỗi liên tiếp, nửa mở sau 30 s
+resilience4j:
+  circuitbreaker:
+    instances:
+      turnstile:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 5
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 100
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 1
+        automatic-transition-from-open-to-half-open-enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    com.tmc: INFO

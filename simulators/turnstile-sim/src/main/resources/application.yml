@@ -1,0 +1,25 @@
+server:
+  port: ${SERVER_PORT:9001}
+
+spring:
+  application:
+    name: turnstile-sim
+  jackson:
+    time-zone: UTC
+    serialization:
+      write-dates-as-timestamps: false
+
+tmc:
+  sim:
+    turnstile-ids: ${TURNSTILE_IDS:BD-IN-01,BD-OUT-01}
+    # Hành vi ban đầu; đổi khi đang chạy bằng PUT /admin/behavior
+    latency-min: ${SIM_LATENCY_MIN:300ms}
+    latency-max: ${SIM_LATENCY_MAX:500ms}
+    failure-rate: ${SIM_FAILURE_RATE:0.0}
+    mode: ${SIM_MODE:NORMAL}   # NORMAL | TIMEOUT | ERROR | EXECUTE_THEN_TIMEOUT
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

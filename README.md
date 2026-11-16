@@ -1,0 +1,103 @@
+# TMC – Hệ thống kiểm soát ra vào và chấm công bằng mã QR
+
+Mã nguồn Milestone 2 của bài tập lớn Kiến trúc phần mềm (CO3017).
+
+## Kiến trúc tóm tắt
+
+- **Q1 Gate Quantum** – `gate-agent`: chạy tại mỗi nhà máy (Bình Dương, Long An), tự xác thực QR và ghi chấm công kể cả khi mất kết nối; SQLite + transactional outbox.
+- **Q2 Central Quantum** – `central`: modular monolith (Spring Modulith) tại trung tâm; PostgreSQL; ký mã QR động Ed25519.
+- Hai quantum chỉ giao tiếp qua `sync-contract` (REST/JSON, bất đồng bộ, idempotent).
+
+## Ánh xạ component ↔ thư mục
+
+| Component | Package | Thư mục | Port / interface chính |
+|---|---|---|---|
+| G1 Access Control | `access` | `gate-agent/src/main/java/com/tmc/gate/access` | `QrTokenVerifier`, `CredentialReader`, `ScanAttemptStore`, `TransactionStore`, `TurnstileGateway` |
+| G2 Turnstile Adapter | `turnstile` | `gate-agent/.../gate/turnstile` | `HttpTurnstileAdapter`, `FakeTurnstileGateway` |
+| G3 Local Store & Outbox | `localstore` | `gate-agent/.../gate/localstore` | `SqliteCredentialStore`, `SqliteScanStore`, `SqliteOutboxStore` |
+| G4 Gate Sync Agent | `sync` | `gate-agent/.../gate/sync` | `SyncClient`, `OutboxStore`, `CredentialWriter` |
+| G5 Guard Console | `guard` | `gate-agent/.../gate/guard` | SSE `/guard/events`, `ManualOpenUseCase` |
+| C1 Gate Sync & Ingestion | `ingestion` | `central/src/main/java/com/tmc/central/ingestion` | `SyncAPI`, `IngestionApi` |
+| C2 Employee & QR Management | `employee` | `central/.../central/employee` | `QrTokenSigner`, `EmployeeApi`, `QrTokenAPI` |
+| C3 Gate Station Management | `station` | `central/.../central/station` | `StationApi` |
+| C4 Adjustment & Period Closing | `period` | `central/.../central/period` | (Could) |
+| C5 HR/Payroll Adapter | `hrpayroll` | `central/.../central/hrpayroll` | `HrPayrollGateway`, `EmployeeSourceGateway` (Could) |
+| C6 Reporting & Monitoring | `reporting` | `central/.../central/reporting` | `/attendance` |
+| C7 IAM / RBAC | `iam` | `central/.../central/iam` | `AuthApi` |
+| C8 Audit Log | `audit` | `central/.../central/audit` | `AuditApi` |
+| C9 Configuration | `config` | `central/.../central/config` | `ConfigAPI` |
+| Hợp đồng Q1 ↔ Q2 | — | `sync-contract` | `EventBatch`, `BatchAck`, `SnapshotDelta`, `Heartbeat` |
+| Giao diện | — | `web` | Kiosk, Guard (đóng gói vào gate-agent); Portal giả lập, Admin (đóng gói vào central) |
+| Bộ giả lập | — | `simulators/turnstile-sim`, `simulators/hr-sim` | — |
+
+Bên trong mỗi package có 4 tầng `api / application / domain / infrastructure`. `domain` là Java thuần, không phụ thuộc Spring hay `infrastructure` (kiểm tra bằng ArchUnit và Spring Modulith trong CI).
+
+## Cấu trúc thư mục
+
+```
+tmc/
+├── pom.xml                  parent POM (Java 21, Spring Boot 3.5)
+├── sync-contract/           thư viện DTO dùng chung
+├── gate-agent/              Q1 – G1..G5
+├── central/                 Q2 – C1..C9
+├── simulators/              turnstile-sim, hr-sim
+├── web/                     React + TypeScript + Vite (hai build target: gate, central)
+├── deploy/                  docker-compose.yml, Dockerfile, env, script demo
+├── tests/                   e2e (T1–T11), load (k6)
+└── .github/workflows/ci.yml
+```
+
+## Yêu cầu
+
+- JDK 21+ (build với `release 21`), Maven 3.9+
+- Node.js 22, npm 10
+- Docker + Docker Compose v2
+- Git Bash (Windows) để chạy script trong `deploy/scripts`
+
+## Chạy khi phát triển
+
+```bash
+# Backend
+mvn -q -DskipTests install                       # build toàn bộ
+docker compose -f deploy/docker-compose.yml up -d postgres
+mvn -pl central spring-boot:run -Dspring-boot.run.profiles=demo
+mvn -pl simulators/turnstile-sim spring-boot:run
+mvn -pl gate-agent spring-boot:run -Dspring-boot.run.profiles=demo
+
+# Frontend (proxy tới :8081 và :8080, xem web/vite.config.ts)
+cd web && npm install && npm run dev
+# http://localhost:5173/kiosk.html?station=BD-IN-01 · /portal.html · /guard.html · /admin.html
+```
+
+## Chạy toàn bộ bằng Docker
+
+```bash
+docker compose -f deploy/docker-compose.yml up --build
+```
+
+| Dịch vụ | Địa chỉ |
+|---|---|
+| Central (Admin, Portal giả lập, API) | http://localhost:8080 – `/admin.html`, `/portal.html`, `/swagger-ui.html` |
+| Gate Bình Dương (Kiosk, Guard) | http://localhost:8081 – `/kiosk.html?station=BD-IN-01`, `/guard.html` |
+| Gate Long An | http://localhost:8082 |
+| Turnstile sim BD / LA | http://localhost:9001, http://localhost:9002 |
+| PostgreSQL | localhost:5432 (tmc/tmc) |
+
+## Script demo
+
+| Script | Mục đích | Kịch bản |
+|---|---|---|
+| `deploy/scripts/offline.sh bd` / `online.sh bd` | Ngắt / nối lại gate khỏi WAN | D4, T5, T11 |
+| `deploy/scripts/kill-gate.sh bd` | Kill -9 rồi khởi động lại gate | D6, T8 |
+| `deploy/scripts/sim.sh bd TIMEOUT` | Đổi hành vi cổng xoay giả lập | D5, T7 |
+| `deploy/scripts/gen-keys.sh` | Sinh khóa Ed25519 và RSA vào `deploy/env/secrets/` | — |
+
+## Các bước demo D1–D6
+
+_Bổ sung khi hoàn thành các gói Must (gói DOC-1)._
+
+## Quy ước
+
+- Nhánh `feat/<mã-gói>-mo-ta`; commit `<mã-gói>: <mô tả>`; PR sửa `sync-contract` cần cả hai người backend duyệt.
+- Không viết cứng ngưỡng/timeout/chu kỳ (dùng `tmc.*` trong `application.yml`).
+- Không commit secret: khóa nằm trong `deploy/env/secrets/` (đã gitignore). Giá trị trong `deploy/env/*.env` chỉ dành cho demo.

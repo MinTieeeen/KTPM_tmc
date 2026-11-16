@@ -1,0 +1,12 @@
+# Profile demo: tự sinh khóa ký nếu chưa cấu hình, cho phép Portal giả lập chọn nhân viên bằng header.
+tmc:
+  central:
+    demo:
+      auto-generate-keys: true
+      allow-demo-employee-header: true
+    settings:
+      offline-threshold: 2m
+
+logging:
+  level:
+    com.tmc: DEBUG
