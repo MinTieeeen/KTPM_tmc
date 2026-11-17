@@ -1,6 +1,6 @@
 # K-05 – Bảng điều khiển demo
 
-> Trạng thái: **Mô tả xong · Chưa thiết kế** · Người viết: FE-1 · Ngày: 17/11/2026
+> Trạng thái: **Đã thiết kế (wireframe) · chờ duyệt** · Người viết: FE-1 · Ngày: 17/11/2026
 >
 > Vị trí trong sitemap: [sitemap.md § 4 – K-05](../sitemap.md#4-danh-mục-màn-hình-ánh-xạ-sitemap--thiết-kế) · Màn hình cha: kiosk.html (bổ sung cho K-01)
 
@@ -45,25 +45,34 @@ Bật/tắt giả lập mất kết nối Gate–Central ngay trên kiosk khi tr
 
 - Bảng thu gọn ở góc, không che vùng kết quả quét.
 
-## 7. Thiết kế chi tiết
-
-> **TODO – chưa thiết kế.** Điền khi bắt đầu bước thiết kế giao diện.
+## 7. Thiết kế màn hình
 
 ### 7.1. Wireframe
-_TODO: wireframe cho từng trạng thái ở mục 4 (`../../images/screens/K-05-demo-panel.png`)._
 
-### 7.2. Bố cục và thành phần UI
-_TODO: vùng, component, kích thước, typography, màu theo trạng thái._
+Nguồn: [wireframes.drawio](../../drawio/wireframes.drawio), tab `K-05 Bảng điều khiển demo`. Số đỏ trên hình ứng với cột **#** ở mục 7.2.
 
-### 7.3. Tương tác chi tiết
-_TODO: thao tác chuột / bàn phím / máy quét, chuyển trạng thái, thời gian hiệu ứng._
+![K-05 wireframe](../../images/screens/K-05-demo-panel.png)
 
-### 7.4. Responsive
-_TODO: kích thước mục tiêu – màn hình kiosk ngang, toàn màn hình._
+### 7.2. Thành phần giao diện
 
-### 7.5. Khả năng tiếp cận
-_TODO: tương phản màu, cỡ chữ, focus, nhãn cho trình đọc màn hình._
+| # | Thành phần | Loại | Dữ liệu (nguồn) | Cách hiển thị |
+|---|---|---|---|---|
+| 1 | Tiêu đề bảng | Collapsible header (button) | Tĩnh | Nền xám đậm, "⚙ Bảng điều khiển demo ▾"; bấm để thu gọn/mở rộng. Bảng nằm góc phải, không che vùng kết quả. |
+| 2 | Trạng thái | Key–value list | `GET /status`: `online`, `outboxDepth`, `offlineThresholdExceeded` | 3 dòng: Kết nối (Online / OFFLINE (giả lập)), Outbox ({n} bản ghi), Quá ngưỡng (Không / Có). Giá trị đỏ khi offline. |
+| 3 | Nút giả lập | Button (danger / primary) | Trạng thái offline hiện tại | Đỏ "Giả lập mất kết nối" khi online; xanh "Nối lại" khi đang giả lập; khóa trong lúc gửi. |
+| 4 | Ghi chú | Text | Tĩnh | 11 px xám nghiêng: "Chỉ có ở profile demo (?demo=1)". |
 
-## 8. Tiêu chí chấp nhận (nháp)
+### 7.3. Hành động (input → output)
 
-_TODO: hoàn thiện cùng thiết kế; mỗi trạng thái ở mục 4 có ít nhất một test UI (Vitest) hoặc một bước trong kịch bản demo._
+| Mã | Hành động | Input | Xử lý / API | Output |
+|---|---|---|---|---|
+| K05-A1 | Giả lập mất kết nối | Bấm [3] khi online | `POST /admin/simulate-offline {offline: true}` | 204 → [3] thành "Nối lại"; trong ≤ 3 s [2] và biểu ngữ K-01 chuyển OFFLINE |
+| K05-A2 | Nối lại | Bấm [3] khi offline | `POST /admin/simulate-offline {offline: false}` | 204 → [3] thành "Giả lập mất kết nối"; outbox giảm dần về 0 |
+| K05-A3 | Thu gọn / mở rộng | Bấm [1] | Lưu lựa chọn trong `localStorage` | Chỉ còn thanh tiêu đề / hiện đủ bảng |
+| K05-A4 | Không có profile demo | `POST` trả 404 | – | Ẩn toàn bộ bảng |
+
+## 8. Tiêu chí chấp nhận
+
+- [ ] Profile `demo`: bấm "Giả lập mất kết nối" → biểu ngữ OFFLINE xuất hiện, quét vẫn được, outbox tăng (D4).
+- [ ] Sau 2 phút offline → trạm VÀO hiện cảnh báo chiều vào (T11); "Nối lại" → outbox về 0.
+- [ ] Không phải profile `demo` → bảng bị ẩn.

@@ -1,6 +1,6 @@
 # K-01 – Chờ quét
 
-> Trạng thái: **Mô tả xong · Chưa thiết kế** · Người viết: FE-1 · Ngày: 17/11/2026
+> Trạng thái: **Đã thiết kế (wireframe) · chờ duyệt** · Người viết: FE-1 · Ngày: 17/11/2026
 >
 > Vị trí trong sitemap: [sitemap.md § 4 – K-01](../sitemap.md#4-danh-mục-màn-hình-ánh-xạ-sitemap--thiết-kế) · Màn hình cha: kiosk.html
 
@@ -51,25 +51,38 @@ Màn hình thường trực của kiosk: chờ máy quét gửi chuỗi QR, gử
 - Hỏi `GET /status` mỗi 3 s.
 - Một lượt quét tại một thời điểm; không tự gửi lại `/scan`.
 
-## 7. Thiết kế chi tiết
-
-> **TODO – chưa thiết kế.** Điền khi bắt đầu bước thiết kế giao diện.
+## 7. Thiết kế màn hình
 
 ### 7.1. Wireframe
-_TODO: wireframe cho từng trạng thái ở mục 4 (`../../images/screens/K-01-kiosk-idle.png`)._
 
-### 7.2. Bố cục và thành phần UI
-_TODO: vùng, component, kích thước, typography, màu theo trạng thái._
+Nguồn: [wireframes.drawio](../../drawio/wireframes.drawio), tab `K-01 Chờ quét`. Số đỏ trên hình ứng với cột **#** ở mục 7.2.
 
-### 7.3. Tương tác chi tiết
-_TODO: thao tác chuột / bàn phím / máy quét, chuyển trạng thái, thời gian hiệu ứng._
+![K-01 wireframe](../../images/screens/K-01-kiosk-idle.png)
 
-### 7.4. Responsive
-_TODO: kích thước mục tiêu – màn hình kiosk ngang, toàn màn hình._
+### 7.2. Thành phần giao diện
 
-### 7.5. Khả năng tiếp cận
-_TODO: tương phản màu, cỡ chữ, focus, nhãn cho trình đọc màn hình._
+| # | Thành phần | Loại | Dữ liệu (nguồn) | Cách hiển thị |
+|---|---|---|---|---|
+| 1 | Thanh tiêu đề trạm | Header (text + đồng hồ) | `stationId` từ URL; chiều suy từ mã trạm (`-IN-` → VÀO, `-OUT-` → RA); giờ máy | Nền tối `#263238`, chữ trắng 20 px đậm: "Trạm BD-IN-01 · Chiều VÀO"; bên phải đồng hồ `HH:mm:ss` giờ Việt Nam, cập nhật mỗi giây. |
+| 2 | Chip kết nối | Status chip | `GET /status` → `online` | Viên thuốc: xanh "● Đã kết nối" khi `online = true`; đỏ "● OFFLINE" khi `false`; xám "● Mất liên lạc gate" khi chính `GET /status` lỗi. |
+| 3 | Hướng dẫn quét | Icon + heading + text | Tĩnh | Biểu tượng QR, dòng chính "Đưa mã QR vào máy quét" 30 px đậm, dòng phụ "Mã QR trên Portal tự đổi mỗi 30 giây" 15 px xám; căn giữa. |
+| 4 | Ô nhập quét ẩn | Input text (ẩn) | Chuỗi do máy quét USB gõ | Không nhìn thấy (opacity 0, vẫn nhận phím); luôn giữ focus. Viền nét đứt chỉ để minh họa trong wireframe. |
+| 5 | Biểu ngữ OFFLINE | Banner cảnh báo | `online`, `outboxDepth`, `lastSyncAt` | Chỉ hiện khi `online = false`. Dải cam toàn chiều ngang ngay dưới thanh tiêu đề: "OFFLINE – {outboxDepth} bản ghi chờ đồng bộ · lần đồng bộ cuối {HH:mm}". |
+| 6 | Cảnh báo chiều vào tạm ngừng | Alert lỗi | `offlineThresholdExceeded`, chiều của trạm | Chỉ hiện khi `offlineThresholdExceeded = true` **và** trạm chiều VÀO. Hộp đỏ, chữ đậm 16 px: "Chiều vào tạm ngừng – vui lòng gặp bảo vệ". |
+| 7 | Thanh trạng thái | Footer text | `gateId`, `lastSyncAt`, `pendingReconcile` | Chữ xám 12 px: trái "{gateId} · đồng bộ lúc {HH:mm:ss}"; phải "Lượt cần đối soát: {pendingReconcile}". |
 
-## 8. Tiêu chí chấp nhận (nháp)
+### 7.3. Hành động (input → output)
 
-_TODO: hoàn thiện cùng thiết kế; mỗi trạng thái ở mục 4 có ít nhất một test UI (Vitest) hoặc một bước trong kịch bản demo._
+| Mã | Hành động | Input | Xử lý / API | Output |
+|---|---|---|---|---|
+| K01-A1 | Mở trang | URL `kiosk.html?station=…` | Kiểm tra định dạng `stationId`; gọi `GET /status`; kiểm tra `stationId` có trong `turnstiles` | Hợp lệ → hiện K-01 và focus [4]; không hợp lệ → K-03 |
+| K01-A2 | Cập nhật trạng thái | Bộ hẹn giờ mỗi 3 s | `GET /status` (timeout 2 s) | Cập nhật [2] [5] [6] [7]; lỗi → giữ dữ liệu cũ, [2] chuyển xám "Mất liên lạc gate" |
+| K01-A3 | Quét mã | Máy quét gõ chuỗi + Enter vào [4] | Trim; chuỗi rỗng hoặc đang có lượt chờ → bỏ qua; `POST /scan {stationId, raw}` với timeout 2000 ms | Mở K-02 với kết quả (hoặc trạng thái "Không xác định" nếu lỗi/timeout); xóa nội dung [4] |
+| K01-A4 | Giữ focus | [4] mất focus (bấm ra ngoài, cửa sổ khác) | Đặt lại focus sau 100 ms | [4] luôn sẵn sàng nhận chuỗi |
+
+## 8. Tiêu chí chấp nhận
+
+- [ ] Mở `kiosk.html?station=BD-IN-01` khi gate online: hiện [1] [2] xanh [3], không có [5] [6].
+- [ ] Giả lập offline quá ngưỡng (D4/T11): trong ≤ 3 s hiện [5] với đúng `outboxDepth` và [6] trên trạm VÀO; trạm RA không có [6].
+- [ ] Gõ chuỗi + Enter hai lần liên tiếp nhanh: chỉ một `POST /scan` được gửi.
+- [ ] Bấm chuột ra ngoài rồi quét: chuỗi vẫn vào [4] (focus được khôi phục).

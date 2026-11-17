@@ -1,6 +1,6 @@
 # AU-01 – Đăng nhập
 
-> Trạng thái: **Mô tả xong · Chưa thiết kế** · Người viết: FE-2 · Ngày: 17/11/2026
+> Trạng thái: **Đã thiết kế (wireframe) · chờ duyệt** · Người viết: FE-2 · Ngày: 17/11/2026
 >
 > Vị trí trong sitemap: [sitemap.md § 4 – AU-01](../sitemap.md#4-danh-mục-màn-hình-ánh-xạ-sitemap--thiết-kế) · Màn hình cha: portal.html, admin.html
 
@@ -49,25 +49,38 @@ Xác thực người dùng trước khi vào Portal hoặc Admin; một componen
 - Token lưu trong `sessionStorage`.
 - Không lưu, không log mật khẩu.
 
-## 7. Thiết kế chi tiết
-
-> **TODO – chưa thiết kế.** Điền khi bắt đầu bước thiết kế giao diện.
+## 7. Thiết kế màn hình
 
 ### 7.1. Wireframe
-_TODO: wireframe cho từng trạng thái ở mục 4 (`../../images/screens/AU-01-login.png`)._
 
-### 7.2. Bố cục và thành phần UI
-_TODO: vùng, component, kích thước, typography, màu theo trạng thái._
+Nguồn: [wireframes.drawio](../../drawio/wireframes.drawio), tab `AU-01 Đăng nhập`. Số đỏ trên hình ứng với cột **#** ở mục 7.2.
 
-### 7.3. Tương tác chi tiết
-_TODO: thao tác chuột / bàn phím / máy quét, chuyển trạng thái, thời gian hiệu ứng._
+![AU-01 wireframe](../../images/screens/AU-01-login.png)
 
-### 7.4. Responsive
-_TODO: kích thước mục tiêu – điện thoại (Portal) và desktop (Admin)._
+### 7.2. Thành phần giao diện
 
-### 7.5. Khả năng tiếp cận
-_TODO: tương phản màu, cỡ chữ, focus, nhãn cho trình đọc màn hình._
+| # | Thành phần | Loại | Dữ liệu (nguồn) | Cách hiển thị |
+|---|---|---|---|---|
+| 1 | Tiêu đề | Heading + text | Trang hiện tại | "TMC Portal" hoặc "TMC Admin" 24 px xanh đậm; dòng phụ "Đăng nhập để tiếp tục". |
+| 2 | Tên đăng nhập | Input text | Người dùng nhập | Nhãn phía trên; `autocomplete=username`, tối đa 32 ký tự, tự focus khi mở. |
+| 3 | Mật khẩu | Input password + nút hiện/ẩn | Người dùng nhập | Ký tự ẩn `••••`; nút 👁 bật/tắt hiển thị; tối đa 128 ký tự; viền đỏ khi sai. |
+| 4 | Nút Đăng nhập | Button primary (submit) | Trạng thái form | Toàn chiều rộng; khóa khi một trong hai ô trống; khi đang gửi: xám, chữ "Đang đăng nhập…". |
+| 5 | Thông báo lỗi | Alert lỗi | Kết quả `POST /auth/login` | Hộp đỏ: "Sai thông tin đăng nhập hoặc tài khoản bị khóa" (401) hoặc "Không kết nối được máy chủ, thử lại" (mạng/5xx). |
+| 6 | Ghi chú phiên | Text | Tĩnh | 11 px xám nghiêng: "Phiên đăng nhập kết thúc khi đóng tab". |
 
-## 8. Tiêu chí chấp nhận (nháp)
+### 7.3. Hành động (input → output)
 
-_TODO: hoàn thiện cùng thiết kế; mỗi trạng thái ở mục 4 có ít nhất một test UI (Vitest) hoặc một bước trong kịch bản demo._
+| Mã | Hành động | Input | Xử lý / API | Output |
+|---|---|---|---|---|
+| AU01-A1 | Nhập liệu | Gõ vào [2] [3] | Kiểm tra không rỗng | Mở khóa [4]; ẩn [5] |
+| AU01-A2 | Đăng nhập | Bấm [4] hoặc Enter | `POST /auth/login {username, password}`; khóa form | 200 → lưu `accessToken` vào `sessionStorage`; `role` đúng trang → P-01 / A-02, sai → AU-02 |
+| AU01-A3 | Đăng nhập thất bại | 401 `INVALID_CREDENTIALS` | Xóa [3] | Hiện [5], focus [3], mở khóa form |
+| AU01-A4 | Lỗi mạng | Lỗi kết nối / 5xx | – | Hiện [5] với câu lỗi kết nối, giữ nguyên dữ liệu đã nhập |
+| AU01-A5 | Hiện/ẩn mật khẩu | Bấm 👁 trong [3] | Đổi kiểu input | Mật khẩu hiện chữ / ẩn lại |
+
+## 8. Tiêu chí chấp nhận
+
+- [ ] `e0001` + mật khẩu demo trên Portal → vào P-01; `admin` trên Admin → vào A-02.
+- [ ] Sai mật khẩu và tài khoản `e0019` (bị khóa) → cùng một câu ở [5] (S2).
+- [ ] Bấm Đăng nhập liên tục khi đang gửi → chỉ một request.
+- [ ] Đóng tab rồi mở lại → phải đăng nhập lại.

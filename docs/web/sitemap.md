@@ -3,7 +3,7 @@
 > Trạng thái: Draft · Người viết: FE-1, FE-2 · Người duyệt: BE-1 (Kiosk), BE-2 (Portal, Admin) · Ngày: 17/11/2026
 >
 > Nguồn: đặc tả triển khai M2 mục 10 (frontend), [spec](../spec/README.md), hợp đồng API [../api/README.md](../api/README.md).
-> Thiết kế chi tiết từng màn hình: thư mục [screens/](screens/README.md).
+> Thiết kế chi tiết từng màn hình: thư mục [screens/](screens/README.md) · Wireframe của mọi màn hình: [wireframes.drawio](../drawio/wireframes.drawio) (mỗi màn hình một tab, ảnh trong `../images/screens/`).
 
 ## 1. Mục đích và phạm vi
 

@@ -1,6 +1,6 @@
 # AU-02 – Không có quyền truy cập
 
-> Trạng thái: **Mô tả xong · Chưa thiết kế** · Người viết: FE-2 · Ngày: 17/11/2026
+> Trạng thái: **Đã thiết kế (wireframe) · chờ duyệt** · Người viết: FE-2 · Ngày: 17/11/2026
 >
 > Vị trí trong sitemap: [sitemap.md § 4 – AU-02](../sitemap.md#4-danh-mục-màn-hình-ánh-xạ-sitemap--thiết-kế) · Màn hình cha: portal.html, admin.html
 
@@ -43,25 +43,30 @@ Báo rõ tài khoản hiện tại không được dùng trang này và cho phé
 
 - Không gọi API nghiệp vụ nào khi đang ở màn hình này.
 
-## 7. Thiết kế chi tiết
-
-> **TODO – chưa thiết kế.** Điền khi bắt đầu bước thiết kế giao diện.
+## 7. Thiết kế màn hình
 
 ### 7.1. Wireframe
-_TODO: wireframe cho từng trạng thái ở mục 4 (`../../images/screens/AU-02-forbidden.png`)._
 
-### 7.2. Bố cục và thành phần UI
-_TODO: vùng, component, kích thước, typography, màu theo trạng thái._
+Nguồn: [wireframes.drawio](../../drawio/wireframes.drawio), tab `AU-02 Không có quyền truy cập`. Số đỏ trên hình ứng với cột **#** ở mục 7.2.
 
-### 7.3. Tương tác chi tiết
-_TODO: thao tác chuột / bàn phím / máy quét, chuyển trạng thái, thời gian hiệu ứng._
+![AU-02 wireframe](../../images/screens/AU-02-forbidden.png)
 
-### 7.4. Responsive
-_TODO: kích thước mục tiêu – điện thoại (Portal) và desktop (Admin)._
+### 7.2. Thành phần giao diện
 
-### 7.5. Khả năng tiếp cận
-_TODO: tương phản màu, cỡ chữ, focus, nhãn cho trình đọc màn hình._
+| # | Thành phần | Loại | Dữ liệu (nguồn) | Cách hiển thị |
+|---|---|---|---|---|
+| 1 | Tiêu đề | Icon ⛔ + heading | Tĩnh | 24 px đậm: "Không có quyền truy cập". |
+| 2 | Thông tin tài khoản | Text | `GET /auth/me`: `username`, `role`; tên trang | "Tài khoản {username} ({role}) không được dùng trang {Quản trị / Portal nhân viên}." |
+| 3 | Gợi ý | Text | Trang hiện tại | 13 px xám: "Đăng nhập bằng tài khoản có vai trò ADMIN" (Admin) / "EMPLOYEE" (Portal). |
+| 4 | Nút Đăng xuất | Button primary | – | Căn giữa dưới nội dung. |
 
-## 8. Tiêu chí chấp nhận (nháp)
+### 7.3. Hành động (input → output)
 
-_TODO: hoàn thiện cùng thiết kế; mỗi trạng thái ở mục 4 có ít nhất một test UI (Vitest) hoặc một bước trong kịch bản demo._
+| Mã | Hành động | Input | Xử lý / API | Output |
+|---|---|---|---|---|
+| AU02-A1 | Đăng xuất | Bấm [4] | Xóa token trong `sessionStorage` | Chuyển AU-01 |
+
+## 8. Tiêu chí chấp nhận
+
+- [ ] Đăng nhập `e0001` trên `admin.html` → AU-02 với đúng tên tài khoản và vai trò (S1).
+- [ ] Ở AU-02 không có request nào tới `/employees`, `/stations`, `/portal/qr-token`.

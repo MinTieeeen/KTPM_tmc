@@ -1,6 +1,6 @@
 # A-04 – Tab Trạm
 
-> Trạng thái: **Mô tả xong · Chưa thiết kế** · Người viết: FE-2 · Ngày: 17/11/2026
+> Trạng thái: **Đã thiết kế (wireframe) · chờ duyệt** · Người viết: FE-2 · Ngày: 17/11/2026
 >
 > Vị trí trong sitemap: [sitemap.md § 4 – A-04](../sitemap.md#4-danh-mục-màn-hình-ánh-xạ-sitemap--thiết-kế) · Màn hình cha: A-01 Khung trang quản trị
 
@@ -45,25 +45,36 @@ Theo dõi online/offline và số bản ghi chờ đồng bộ của từng nhà
 - Tự làm mới mỗi 5 s.
 - Nhóm theo nhà máy (các trạm cùng nhà máy dùng chung số liệu heartbeat).
 
-## 7. Thiết kế chi tiết
-
-> **TODO – chưa thiết kế.** Điền khi bắt đầu bước thiết kế giao diện.
+## 7. Thiết kế màn hình
 
 ### 7.1. Wireframe
-_TODO: wireframe cho từng trạng thái ở mục 4 (`../../images/screens/A-04-stations-tab.png`)._
 
-### 7.2. Bố cục và thành phần UI
-_TODO: vùng, component, kích thước, typography, màu theo trạng thái._
+Nguồn: [wireframes.drawio](../../drawio/wireframes.drawio), tab `A-04 Tab Trạm`. Số đỏ trên hình ứng với cột **#** ở mục 7.2.
 
-### 7.3. Tương tác chi tiết
-_TODO: thao tác chuột / bàn phím / máy quét, chuyển trạng thái, thời gian hiệu ứng._
+![A-04 wireframe](../../images/screens/A-04-stations-tab.png)
 
-### 7.4. Responsive
-_TODO: kích thước mục tiêu – desktop ≥ 1280 px._
+### 7.2. Thành phần giao diện
 
-### 7.5. Khả năng tiếp cận
-_TODO: tương phản màu, cỡ chữ, focus, nhãn cho trình đọc màn hình._
+| # | Thành phần | Loại | Dữ liệu (nguồn) | Cách hiển thị |
+|---|---|---|---|---|
+| 1 | Chỉ báo làm mới | Text | Thời điểm tải thành công gần nhất | 13 px xám: "Tự làm mới mỗi 5 giây · cập nhật lúc {HH:mm:ss}". |
+| 2 | Tiêu đề nhóm nhà máy | Group header | `factoryId`, `gateId` | 16 px đậm: "Nhà máy Bình Dương · gate-bd" (BD → Bình Dương, LA → Long An). |
+| 3 | Trạng thái gate | Badge | `online` (chung cho cả nhóm) | Xanh "ONLINE" / đỏ "OFFLINE". |
+| 4 | Thông tin đồng bộ | Text | `lastHeartbeatAt`, `outboxDepth`, `lastSyncAt` | "Heartbeat cuối: {thời gian tương đối} · Outbox: {n} bản ghi · đồng bộ cuối {HH:mm}"; đỏ khi OFFLINE; "chưa có heartbeat" khi trống. |
+| 5 | Bảng trạm | Table | `StationView[]` của nhóm | Cột: Trạm · Chiều (VÀO/RA) · Trạng thái trạm (`enabled`: Bật/Tắt) · Cổng xoay. Sắp theo mã trạm. |
+| 6 | Trạng thái cổng xoay | Badge | `turnstileStatus` | Xanh "UP" / đỏ "DOWN" / cam "CIRCUIT_OPEN" / xám "—" khi chưa có. |
+| 7 | Cảnh báo dữ liệu cũ | Alert cảnh báo | Lỗi lần làm mới gần nhất | Hộp vàng: "Không tải được dữ liệu – đang hiển thị dữ liệu lúc {HH:mm:ss}". |
 
-## 8. Tiêu chí chấp nhận (nháp)
+### 7.3. Hành động (input → output)
 
-_TODO: hoàn thiện cùng thiết kế; mỗi trạng thái ở mục 4 có ít nhất một test UI (Vitest) hoặc một bước trong kịch bản demo._
+| Mã | Hành động | Input | Xử lý / API | Output |
+|---|---|---|---|---|
+| A04-A1 | Tải và làm mới | Mở tab; bộ hẹn giờ mỗi 5 s (chỉ khi tab đang hiện) | `GET /stations`; nhóm theo `factoryId` | Cập nhật [1]–[6]; ẩn [7] |
+| A04-A2 | Lỗi làm mới | Lỗi mạng / 5xx | Giữ dữ liệu cũ | Hiện [7] |
+| A04-A3 | Cập nhật thời gian tương đối | Mỗi giây | Tính lại từ `lastHeartbeatAt` | [4] "3 giây trước" → "4 giây trước"… |
+
+## 8. Tiêu chí chấp nhận
+
+- [ ] Ngắt mạng gate-bd → trong ≤ 35 s nhóm BD chuyển OFFLINE, outbox tăng theo số lượt quét (D4).
+- [ ] Nối lại → nhóm BD ONLINE và outbox về 0.
+- [ ] Bộ giả lập ở chế độ ERROR nhiều lần → cổng xoay của trạm hiện CIRCUIT_OPEN.

@@ -1,6 +1,6 @@
 # P-02 – Không có mã QR
 
-> Trạng thái: **Mô tả xong · Chưa thiết kế** · Người viết: FE-2 · Ngày: 17/11/2026
+> Trạng thái: **Đã thiết kế (wireframe) · chờ duyệt** · Người viết: FE-2 · Ngày: 17/11/2026
 >
 > Vị trí trong sitemap: [sitemap.md § 4 – P-02](../sitemap.md#4-danh-mục-màn-hình-ánh-xạ-sitemap--thiết-kế) · Màn hình cha: P-01 Mã QR cá nhân
 
@@ -46,25 +46,33 @@ Thay thế mã QR khi nhân viên không được cấp mã (bị thu hồi, ch�
 - **Không** hiển thị bất kỳ mã QR nào (kể cả mã cũ).
 - Tiếp tục hỏi lại mỗi 30 s.
 
-## 7. Thiết kế chi tiết
-
-> **TODO – chưa thiết kế.** Điền khi bắt đầu bước thiết kế giao diện.
+## 7. Thiết kế màn hình
 
 ### 7.1. Wireframe
-_TODO: wireframe cho từng trạng thái ở mục 4 (`../../images/screens/P-02-no-qr.png`)._
 
-### 7.2. Bố cục và thành phần UI
-_TODO: vùng, component, kích thước, typography, màu theo trạng thái._
+Nguồn: [wireframes.drawio](../../drawio/wireframes.drawio), tab `P-02 Không có mã QR`. Số đỏ trên hình ứng với cột **#** ở mục 7.2.
 
-### 7.3. Tương tác chi tiết
-_TODO: thao tác chuột / bàn phím / máy quét, chuyển trạng thái, thời gian hiệu ứng._
+![P-02 wireframe](../../images/screens/P-02-no-qr.png)
 
-### 7.4. Responsive
-_TODO: kích thước mục tiêu – điện thoại dọc 360–430 px._
+### 7.2. Thành phần giao diện
 
-### 7.5. Khả năng tiếp cận
-_TODO: tương phản màu, cỡ chữ, focus, nhãn cho trình đọc màn hình._
+| # | Thành phần | Loại | Dữ liệu (nguồn) | Cách hiển thị |
+|---|---|---|---|---|
+| 1 | Thanh tiêu đề | App bar | Tĩnh | Như P-01 [1]. |
+| 2 | Biểu tượng | Icon 🚫 | Tĩnh | Tròn nền đỏ nhạt, căn giữa. |
+| 3 | Thông báo chính | Heading | `code` của Problem Details | 20 px đậm đỏ: `CREDENTIAL_REVOKED` → "Mã QR đã bị thu hồi"; `NO_ACTIVE_CREDENTIAL` → "Bạn chưa được cấp mã QR"; `EMPLOYEE_INACTIVE` → "Hồ sơ nhân viên không còn hiệu lực". |
+| 4 | Hướng dẫn | Text | `code` | 14 px: "Liên hệ phòng Nhân sự (HR) để được cấp lại mã." (biến thể theo `code`). |
+| 5 | Trạng thái kiểm tra lại | Info box | Thời điểm lần hỏi gần nhất | Hộp xám: "Tự kiểm tra lại sau 30 giây · lần cuối {HH:mm:ss}". |
+| 6 | Nút Đăng xuất | Button secondary | – | Như P-01 [2]. |
 
-## 8. Tiêu chí chấp nhận (nháp)
+### 7.3. Hành động (input → output)
 
-_TODO: hoàn thiện cùng thiết kế; mỗi trạng thái ở mục 4 có ít nhất một test UI (Vitest) hoặc một bước trong kịch bản demo._
+| Mã | Hành động | Input | Xử lý / API | Output |
+|---|---|---|---|---|
+| P02-A1 | Kiểm tra lại | Bộ hẹn giờ mỗi 30 s | `GET /portal/qr-token` | 200 → P-01; 409 → cập nhật [3] [4] [5] |
+| P02-A2 | Đăng xuất / hết phiên | Bấm [6] hoặc nhận 401 | Xóa token | Chuyển AU-01 |
+
+## 8. Tiêu chí chấp nhận
+
+- [ ] Đăng nhập `e0020` (credential đã thu hồi) → P-02 với câu "Mã QR đã bị thu hồi"; không có QR nào trên màn hình.
+- [ ] Admin cấp lại mã cho E0020 → trong ≤ 30 s Portal tự chuyển P-01.

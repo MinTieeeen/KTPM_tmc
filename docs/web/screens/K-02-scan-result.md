@@ -1,6 +1,6 @@
 # K-02 – Kết quả quét
 
-> Trạng thái: **Mô tả xong · Chưa thiết kế** · Người viết: FE-1 · Ngày: 17/11/2026
+> Trạng thái: **Đã thiết kế (wireframe) · chờ duyệt** · Người viết: FE-1 · Ngày: 17/11/2026
 >
 > Vị trí trong sitemap: [sitemap.md § 4 – K-02](../sitemap.md#4-danh-mục-màn-hình-ánh-xạ-sitemap--thiết-kế) · Màn hình cha: K-01 Chờ quét
 
@@ -47,25 +47,37 @@ Hiển thị kết quả một lượt quét trong 3 s bằng màu và câu ch�
 - `reason` lạ: REJECTED → "Mã QR không hợp lệ", GATE_FAILED → câu của GATE_FAILED.
 - Tự đóng sau 3 s; trong lúc hiện vẫn chặn lượt quét mới.
 
-## 7. Thiết kế chi tiết
-
-> **TODO – chưa thiết kế.** Điền khi bắt đầu bước thiết kế giao diện.
+## 7. Thiết kế màn hình
 
 ### 7.1. Wireframe
-_TODO: wireframe cho từng trạng thái ở mục 4 (`../../images/screens/K-02-scan-result.png`)._
 
-### 7.2. Bố cục và thành phần UI
-_TODO: vùng, component, kích thước, typography, màu theo trạng thái._
+Nguồn: [wireframes.drawio](../../drawio/wireframes.drawio), tab `K-02 Kết quả quét`. Số đỏ trên hình ứng với cột **#** ở mục 7.2.
 
-### 7.3. Tương tác chi tiết
-_TODO: thao tác chuột / bàn phím / máy quét, chuyển trạng thái, thời gian hiệu ứng._
+![K-02 wireframe](../../images/screens/K-02-scan-result.png)
 
-### 7.4. Responsive
-_TODO: kích thước mục tiêu – màn hình kiosk ngang, toàn màn hình._
+### 7.2. Thành phần giao diện
 
-### 7.5. Khả năng tiếp cận
-_TODO: tương phản màu, cỡ chữ, focus, nhãn cho trình đọc màn hình._
+| # | Thành phần | Loại | Dữ liệu (nguồn) | Cách hiển thị |
+|---|---|---|---|---|
+| 1 | Biểu tượng và tiêu đề kết quả | Icon + heading | `result` (hoặc lỗi/timeout) | Toàn màn hình đổi màu: ACCEPTED nền xanh `#2E7D32`, ✓, "MỜI QUA"; REJECTED nền đỏ `#C62828`, ✕, "TỪ CHỐI"; GATE_FAILED nền cam `#EF6C00`, !, "CỔNG CHƯA MỞ"; không xác định nền cam, ?, "KHÔNG XÁC ĐỊNH". Tiêu đề 44 px đậm trắng. |
+| 2 | Nhân viên và chiều | Text | `employeeCode`, `direction` | 28 px trắng: "E0012 · VÀO"; chỉ có `direction` → "Chiều VÀO"; không có cả hai → ẩn. Không bao giờ hiện họ tên. |
+| 3 | Lý do | Text | `reason` → bảng `reasonTexts` (docs/api/README § 5) | 24 px đậm trắng, tối đa 2 dòng. Ẩn khi ACCEPTED. `reason` lạ → câu dự phòng theo `result`. |
+| 4 | Thời gian xử lý | Text | `elapsedMs` | 14 px trắng: "Thời gian xử lý 0,61 s" (giây, 2 chữ số thập phân, dấu phẩy). Ẩn khi không xác định. |
+| 5 | Thanh đếm ngược | Progress bar + text | Bộ đếm 3 s phía client | Thanh trắng co dần trong 3 s, chữ "Tự đóng sau {n} s" bên dưới. |
+| 6 | Mã lượt quét | Text nhỏ | `eventId` | 11 px trắng, góc phải dưới: "Mã lượt: {8 ký tự đầu}" để bảo vệ tra cứu. |
 
-## 8. Tiêu chí chấp nhận (nháp)
+### 7.3. Hành động (input → output)
 
-_TODO: hoàn thiện cùng thiết kế; mỗi trạng thái ở mục 4 có ít nhất một test UI (Vitest) hoặc một bước trong kịch bản demo._
+| Mã | Hành động | Input | Xử lý / API | Output |
+|---|---|---|---|---|
+| K02-A1 | Hiện kết quả | Phản hồi `POST /scan` (200) | Chọn màu/icon/tiêu đề theo `result`; tra câu theo `reason` | Overlay phủ K-01 với [1]–[6] |
+| K02-A2 | Hiện không xác định | Timeout 2000 ms, lỗi mạng, HTTP 4xx/5xx | Không đọc body | Overlay cam "KHÔNG XÁC ĐỊNH" + câu "Không xác định – vui lòng gặp bảo vệ" |
+| K02-A3 | Tự đóng | Hết 3 s | Xóa kết quả | Quay về K-01, focus [4] của K-01 |
+| K02-A4 | Quét trong lúc hiện kết quả | Chuỗi mới từ máy quét | Bỏ qua (không gửi) | Không đổi |
+
+## 8. Tiêu chí chấp nhận
+
+- [ ] `ACCEPTED` → nền xanh với mã nhân viên và chiều; mọi kết quả khác **không bao giờ** xanh (NFR-AVL-03).
+- [ ] Mỗi `reason` trong bảng § 5 hiện đúng câu tiếng Việt; `reason` lạ dùng câu dự phòng.
+- [ ] Mock trả chậm 2,5 s → overlay "KHÔNG XÁC ĐỊNH" sau đúng 2 s.
+- [ ] Overlay tự đóng sau 3 s và K-01 nhận được lượt quét tiếp theo.

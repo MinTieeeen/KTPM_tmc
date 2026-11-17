@@ -1,6 +1,6 @@
 # P-01 – Mã QR cá nhân
 
-> Trạng thái: **Mô tả xong · Chưa thiết kế** · Người viết: FE-2 · Ngày: 17/11/2026
+> Trạng thái: **Đã thiết kế (wireframe) · chờ duyệt** · Người viết: FE-2 · Ngày: 17/11/2026
 >
 > Vị trí trong sitemap: [sitemap.md § 4 – P-01](../sitemap.md#4-danh-mục-màn-hình-ánh-xạ-sitemap--thiết-kế) · Màn hình cha: portal.html
 
@@ -49,25 +49,42 @@ Hiển thị mã QR động của chính nhân viên đang đăng nhập; mã t�
 - Nút "Sao chép chuỗi" copy `raw`.
 - Không log `raw`.
 
-## 7. Thiết kế chi tiết
-
-> **TODO – chưa thiết kế.** Điền khi bắt đầu bước thiết kế giao diện.
+## 7. Thiết kế màn hình
 
 ### 7.1. Wireframe
-_TODO: wireframe cho từng trạng thái ở mục 4 (`../../images/screens/P-01-qr-code.png`)._
 
-### 7.2. Bố cục và thành phần UI
-_TODO: vùng, component, kích thước, typography, màu theo trạng thái._
+Nguồn: [wireframes.drawio](../../drawio/wireframes.drawio), tab `P-01 Mã QR cá nhân`. Số đỏ trên hình ứng với cột **#** ở mục 7.2.
 
-### 7.3. Tương tác chi tiết
-_TODO: thao tác chuột / bàn phím / máy quét, chuyển trạng thái, thời gian hiệu ứng._
+![P-01 wireframe](../../images/screens/P-01-qr-code.png)
 
-### 7.4. Responsive
-_TODO: kích thước mục tiêu – điện thoại dọc 360–430 px._
+### 7.2. Thành phần giao diện
 
-### 7.5. Khả năng tiếp cận
-_TODO: tương phản màu, cỡ chữ, focus, nhãn cho trình đọc màn hình._
+| # | Thành phần | Loại | Dữ liệu (nguồn) | Cách hiển thị |
+|---|---|---|---|---|
+| 1 | Thanh tiêu đề | App bar | Tĩnh | Nền xanh, chữ trắng 16 px đậm: "Mã QR chấm công". |
+| 2 | Nút Đăng xuất | Button secondary | – | Góc phải thanh tiêu đề. |
+| 3 | Thông tin nhân viên | Text | `GET /auth/me`: `employeeCode`, `username` | "Nhân viên {employeeCode}" 18 px đậm; dòng dưới "tài khoản {username}" 12 px xám. API không trả họ tên. |
+| 4 | Mã QR | QR image | `GET /portal/qr-token` → `raw` | 200×200 px, mức sửa lỗi M, viền trắng 8 px, căn giữa; luôn là mã mới nhất. |
+| 5 | Đếm ngược | Progress bar + text | `expiresAt` so với giờ hiện tại | Thanh co dần (xanh; cam khi ≤ 10 s); chữ "Hết hạn sau {n} giây" cập nhật mỗi giây. |
+| 6 | Ghi chú làm mới | Text | `refreshAfterSec` | 12 px xám: "Tự làm mới mỗi {refreshAfterSec} giây". |
+| 7 | Nút Sao chép chuỗi | Button secondary | `raw` | "⧉ Sao chép chuỗi"; dùng khi kiosk không có camera. |
+| 8 | Cảnh báo mất mạng | Alert cảnh báo | Lỗi khi làm mới | Hộp cam: "Không lấy được mã QR mới – kiểm tra kết nối". |
+| 9 | Thông báo đã sao chép | Toast | Kết quả sao chép | Viên thuốc xám đậm "Đã sao chép", tự ẩn sau 2 s. |
 
-## 8. Tiêu chí chấp nhận (nháp)
+### 7.3. Hành động (input → output)
 
-_TODO: hoàn thiện cùng thiết kế; mỗi trạng thái ở mục 4 có ít nhất một test UI (Vitest) hoặc một bước trong kịch bản demo._
+| Mã | Hành động | Input | Xử lý / API | Output |
+|---|---|---|---|---|
+| P01-A1 | Lấy mã | Mở trang (sau khi qua guard) | `GET /auth/me`, `GET /portal/qr-token` | Hiện [3] [4] [5] |
+| P01-A2 | Làm mới định kỳ | Hết `refreshAfterSec` giây; tab hiện lại (`visibilitychange`) | `GET /portal/qr-token` | Thay [4], đặt lại [5]; mã cũ giữ tới khi có mã mới |
+| P01-A3 | Mất mạng khi làm mới | Lỗi mạng / 5xx | Thử lại ở chu kỳ sau | Hiện [8]; giữ [4] tới `expiresAt`, sau đó ẩn [4] và chỉ còn [8] |
+| P01-A4 | Sao chép chuỗi | Bấm [7] | `navigator.clipboard.writeText(raw)` | Hiện [9] trong 2 s |
+| P01-A5 | Mã bị thu hồi / không có | 409 | – | Chuyển P-02 |
+| P01-A6 | Đăng xuất / hết phiên | Bấm [2] hoặc nhận 401 | Xóa token | Chuyển AU-01 |
+
+## 8. Tiêu chí chấp nhận
+
+- [ ] QR đổi sau mỗi 30 s và mỗi lần mở lại tab; đếm ngược luôn khớp `expiresAt` (D1).
+- [ ] Mã do P-01 hiển thị được kiosk chấp nhận; quét lại cùng mã → K-02 "Mã QR đã được sử dụng" (D2).
+- [ ] Ngắt mạng điện thoại → [8] xuất hiện, QR biến mất khi hết hạn.
+- [ ] Thu hồi mã ở Admin → trong lần làm mới kế tiếp chuyển P-02 (D3).
