@@ -129,7 +129,9 @@ Mật khẩu demo chung ghi trong README của repo.
 | `JpaUserAccountRepository` | infrastructure | Spring Data interface | |
 
 ### 6.3. Sơ đồ lớp
-Nguồn: [class-central-iam.drawio](../drawio/class-central-iam.drawio) · Ảnh: ![class diagram](../images/class-central-iam.png)
+Nguồn: [class-diagram.drawio](../drawio/class-diagram.drawio), tab `central-iam`. Lớp được tô màu theo tầng (api xanh dương, application xanh lá, domain vàng, infrastructure cam, module/thư viện khác xám); record/DTO không vẽ, chỉ xuất hiện làm kiểu trong chữ ký.
+
+![class diagram](../images/class-diagram-central-iam.png)
 
 ### 6.4. Luồng xử lý
 ```

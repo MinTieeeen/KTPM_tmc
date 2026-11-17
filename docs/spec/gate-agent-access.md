@@ -170,13 +170,9 @@ Bảng lý do hiển thị: đặc tả M2 mục 10.3 (dùng chung với `web/sh
 | `AccessConfig` | infrastructure | `@Configuration` | Khai báo bean | |
 
 ### 6.3. Sơ đồ lớp
-Nguồn: [class-gate-agent-access.drawio](../drawio/class-gate-agent-access.drawio) (2 trang).
+Nguồn: [class-diagram.drawio](../drawio/class-diagram.drawio), tab `gate-agent-access`. Lớp được tô màu theo tầng; record/DTO và các kiểu kết quả sealed (`Decision`, `VerificationResult`) không vẽ. Mọi realization từ `localstore`, `turnstile`, `access::infrastructure` đều hướng vào `access::domain (port)` (DIP).
 
-Trang 1 – use case, port và adapter (mọi realization đều hướng vào `access::domain`, DIP):
-![class diagram 1](../images/class-gate-agent-access-ports.png)
-
-Trang 2 – mô hình miền:
-![class diagram 2](../images/class-gate-agent-access-domain.png)
+![class diagram](../images/class-diagram-gate-agent-access.png)
 
 ### 6.4. Luồng xử lý `ProcessScanUseCase.handle`
 

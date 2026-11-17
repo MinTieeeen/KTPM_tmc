@@ -115,7 +115,9 @@ Lỗi dùng `ProblemDetail` (RFC 7807) với thuộc tính `code`.
 | `JdbcIngestionStore`, `JdbcRefChangeStore` | infrastructure | `@Repository` | |
 
 ### 6.3. Sơ đồ lớp
-Nguồn: [class-central-ingestion.drawio](../drawio/class-central-ingestion.drawio) · Ảnh: ![class diagram](../images/class-central-ingestion.png)
+Nguồn: [class-diagram.drawio](../drawio/class-diagram.drawio), tab `central-ingestion`. Lớp được tô màu theo tầng (api xanh dương, application xanh lá, domain vàng, infrastructure cam, module/thư viện khác xám); record/DTO không vẽ, chỉ xuất hiện làm kiểu trong chữ ký.
+
+![class diagram](../images/class-diagram-central-ingestion.png)
 
 ### 6.4. Luồng xử lý `IngestEventBatchUseCase.ingest`
 ```

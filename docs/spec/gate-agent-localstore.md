@@ -106,7 +106,9 @@ Các port được cài đặt (định nghĩa ở G1/G4):
 | `LocalStoreException` | exception | — | bổ sung |
 
 ### 6.3. Sơ đồ lớp
-Nguồn: [class-gate-agent-localstore.drawio](../drawio/class-gate-agent-localstore.drawio) · Ảnh: ![class diagram](../images/class-gate-agent-localstore.png)
+Nguồn: [class-diagram.drawio](../drawio/class-diagram.drawio), tab `gate-agent-localstore`. Lớp được tô màu theo tầng (api xanh dương, application xanh lá, domain vàng, infrastructure cam, module/thư viện khác xám); record/DTO không vẽ, chỉ xuất hiện làm kiểu trong chữ ký.
+
+![class diagram](../images/class-diagram-gate-agent-localstore.png)
 
 ### 6.4. Lược đồ dữ liệu (`V1__init.sql`)
 

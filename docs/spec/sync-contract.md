@@ -147,7 +147,9 @@ Thư viện không chia 4 tầng (không có nghiệp vụ); chia theo **package
 | `QrTokenFormatException` | exception | Lỗi định dạng; `code` = `INVALID_FORMAT` \| `UNSUPPORTED_VERSION` | |
 
 ### 6.3. Sơ đồ lớp
-Nguồn: [class-sync-contract.drawio](../drawio/class-sync-contract.drawio) · Ảnh: ![class diagram](../images/class-sync-contract.png)
+Nguồn: [class-diagram.drawio](../drawio/class-diagram.drawio), tab `sync-contract`. Lớp được tô màu theo tầng (api xanh dương, application xanh lá, domain vàng, infrastructure cam, module/thư viện khác xám); riêng module này giữ lại record vì toàn bộ nội dung là DTO.
+
+![class diagram](../images/class-diagram-sync-contract.png)
 
 ### 6.4. Thuật toán `QrTokenFormat`
 ```

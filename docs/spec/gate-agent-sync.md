@@ -113,7 +113,9 @@ HeartbeatSender ──POST /sync/heartbeat──► C1 ──► C3
 | `CentralProperties` | infrastructure | record | `tmc.gate.central.*` |
 
 ### 6.3. Sơ đồ lớp
-Nguồn: [class-gate-agent-sync.drawio](../drawio/class-gate-agent-sync.drawio) · Ảnh: ![class diagram](../images/class-gate-agent-sync.png)
+Nguồn: [class-diagram.drawio](../drawio/class-diagram.drawio), tab `gate-agent-sync`. Lớp được tô màu theo tầng (api xanh dương, application xanh lá, domain vàng, infrastructure cam, module/thư viện khác xám); record/DTO không vẽ, chỉ xuất hiện làm kiểu trong chữ ký.
+
+![class diagram](../images/class-diagram-gate-agent-sync.png)
 
 ### 6.4. Luồng xử lý
 

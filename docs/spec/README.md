@@ -9,37 +9,40 @@
 ```
 tmc/docs/
 ├── spec/      README.md (tài liệu này) + một file SRS cho mỗi module: <module>.md
-├── drawio/    nguồn sơ đồ lớp UML: class-<module>.drawio
-└── images/    ảnh xuất từ sơ đồ: class-<module>.png
+├── drawio/    class-diagram.drawio – mọi sơ đồ lớp, mỗi module một tab (tên tab = <module>)
+└── images/    class-diagram-<module>.png – ảnh xuất từ từng tab
 ```
 
-Tên `<module>` ghép từ quantum và package, ví dụ `gate-agent-access`, `central-iam`. Sơ đồ của `gate-agent-access` có 2 trang, nên có 2 ảnh: `-ports` (use case, port, adapter) và `-domain` (mô hình miền).
+Quy ước vẽ sơ đồ lớp:
+- Package xếp theo tầng; lớp tô màu theo tầng: **api** xanh dương, **application** xanh lá, **domain** vàng, **infrastructure** cam, module khác / thư viện xám (package viền nét đứt). Riêng `sync-contract` tô theo package chủ đề.
+- Record/DTO không vẽ (chỉ xuất hiện làm kiểu trong chữ ký), trừ `sync-contract`, vì nội dung của module này toàn là record.
+- Đường nối gãy khúc vuông góc, góc bo; mỗi đường có điểm ra/vào riêng và làn riêng nên không có đoạn nào chồng lên nhau; chỗ hai đường cắt nhau có cầu vượt.
 
 Sơ đồ được sinh bằng script. Sau khi sửa thiết kế, chạy lại từ thư mục `KTPM-261/`:
 
 ```bash
-python artifacts/drawio/02_spec/gen_spec_class_diagrams.py tmc/docs/drawio
-# xuất PNG (trang thứ <p>, bắt đầu từ 1):
-draw.io -x -f png -b 20 -p <p> -o tmc/docs/images/class-<module>.png tmc/docs/drawio/class-<module>.drawio
+python artifacts/drawio/02_spec/class_diagrams.py tmc/docs/drawio/class-diagram.drawio
+# xuất PNG tab thứ <p> (bắt đầu từ 1, theo thứ tự ở bảng dưới):
+draw.io -x -f png -b 20 -p <p> -o tmc/docs/images/class-diagram-<module>.png tmc/docs/drawio/class-diagram.drawio
 ```
 
 ## 2. Danh mục spec
 
-| Module | Component (báo cáo) | Mức | Spec | Sơ đồ lớp | Ảnh |
+| Tab | Module | Component (báo cáo) | Mức | Spec | Ảnh sơ đồ lớp |
 |---|---|---|---|---|---|
-| `sync-contract` | Hợp đồng Q1 ↔ Q2 | Must | [sync-contract.md](sync-contract.md) | [drawio](../drawio/class-sync-contract.drawio) | [png](../images/class-sync-contract.png) |
-| `gate-agent-access` | G1 Access Control | Must | [gate-agent-access.md](gate-agent-access.md) | [drawio](../drawio/class-gate-agent-access.drawio) | [ports](../images/class-gate-agent-access-ports.png), [domain](../images/class-gate-agent-access-domain.png) |
-| `gate-agent-turnstile` | G2 Turnstile Adapter | Must | [gate-agent-turnstile.md](gate-agent-turnstile.md) | [drawio](../drawio/class-gate-agent-turnstile.drawio) | [png](../images/class-gate-agent-turnstile.png) |
-| `gate-agent-localstore` | G3 Local Store & Outbox | Must | [gate-agent-localstore.md](gate-agent-localstore.md) | [drawio](../drawio/class-gate-agent-localstore.drawio) | [png](../images/class-gate-agent-localstore.png) |
-| `gate-agent-sync` | G4 Gate Sync Agent | Must | [gate-agent-sync.md](gate-agent-sync.md) | [drawio](../drawio/class-gate-agent-sync.drawio) | [png](../images/class-gate-agent-sync.png) |
-| `gate-agent-guard` | G5 Guard Console (rút gọn) | Should | [gate-agent-guard.md](gate-agent-guard.md) | [drawio](../drawio/class-gate-agent-guard.drawio) | [png](../images/class-gate-agent-guard.png) |
-| `central-ingestion` | C1 Gate Sync & Ingestion | Must | [central-ingestion.md](central-ingestion.md) | [drawio](../drawio/class-central-ingestion.drawio) | [png](../images/class-central-ingestion.png) |
-| `central-employee` | C2 Employee & QR Management | Must | [central-employee.md](central-employee.md) | [drawio](../drawio/class-central-employee.drawio) | [png](../images/class-central-employee.png) |
-| `central-station` | C3 Gate Station Management (tối thiểu) | Must | [central-station.md](central-station.md) | [drawio](../drawio/class-central-station.drawio) | [png](../images/class-central-station.png) |
-| `central-iam` | C7 IAM / RBAC (tối thiểu) | Must | [central-iam.md](central-iam.md) | [drawio](../drawio/class-central-iam.drawio) | [png](../images/class-central-iam.png) |
-| `turnstile-sim` | Bộ giả lập cổng xoay | Must | [turnstile-sim.md](turnstile-sim.md) | [drawio](../drawio/class-turnstile-sim.drawio) | [png](../images/class-turnstile-sim.png) |
+| 1 | `sync-contract` | Hợp đồng Q1 ↔ Q2 | Must | [sync-contract.md](sync-contract.md) | [png](../images/class-diagram-sync-contract.png) |
+| 2 | `gate-agent-access` | G1 Access Control | Must | [gate-agent-access.md](gate-agent-access.md) | [png](../images/class-diagram-gate-agent-access.png) |
+| 3 | `gate-agent-turnstile` | G2 Turnstile Adapter | Must | [gate-agent-turnstile.md](gate-agent-turnstile.md) | [png](../images/class-diagram-gate-agent-turnstile.png) |
+| 4 | `gate-agent-localstore` | G3 Local Store & Outbox | Must | [gate-agent-localstore.md](gate-agent-localstore.md) | [png](../images/class-diagram-gate-agent-localstore.png) |
+| 5 | `gate-agent-sync` | G4 Gate Sync Agent | Must | [gate-agent-sync.md](gate-agent-sync.md) | [png](../images/class-diagram-gate-agent-sync.png) |
+| 6 | `gate-agent-guard` | G5 Guard Console (rút gọn) | Should | [gate-agent-guard.md](gate-agent-guard.md) | [png](../images/class-diagram-gate-agent-guard.png) |
+| 7 | `central-ingestion` | C1 Gate Sync & Ingestion | Must | [central-ingestion.md](central-ingestion.md) | [png](../images/class-diagram-central-ingestion.png) |
+| 8 | `central-employee` | C2 Employee & QR Management | Must | [central-employee.md](central-employee.md) | [png](../images/class-diagram-central-employee.png) |
+| 9 | `central-station` | C3 Gate Station Management (tối thiểu) | Must | [central-station.md](central-station.md) | [png](../images/class-diagram-central-station.png) |
+| 10 | `central-iam` | C7 IAM / RBAC (tối thiểu) | Must | [central-iam.md](central-iam.md) | [png](../images/class-diagram-central-iam.png) |
+| 11 | `turnstile-sim` | Bộ giả lập cổng xoay | Must | [turnstile-sim.md](turnstile-sim.md) | [png](../images/class-diagram-turnstile-sim.png) |
 
-`system` và `web` không thuộc phạm vi các spec này.
+Nguồn draw.io chung: [class-diagram.drawio](../drawio/class-diagram.drawio). `system` và `web` không thuộc phạm vi các spec này.
 
 ## 3. Khung SRS dùng chung
 

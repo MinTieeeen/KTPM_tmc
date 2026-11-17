@@ -95,7 +95,9 @@ Dùng cùng quy ước 4 tầng như các module khác (để minh họa SOLID n
 | `SimExceptionHandler` | infrastructure | `@RestControllerAdvice` |
 
 ### 6.3. Sơ đồ lớp
-Nguồn: [class-turnstile-sim.drawio](../drawio/class-turnstile-sim.drawio) · Ảnh: ![class diagram](../images/class-turnstile-sim.png)
+Nguồn: [class-diagram.drawio](../drawio/class-diagram.drawio), tab `turnstile-sim`. Lớp được tô màu theo tầng (api xanh dương, application xanh lá, domain vàng, infrastructure cam, module/thư viện khác xám); record/DTO không vẽ, chỉ xuất hiện làm kiểu trong chữ ký.
+
+![class diagram](../images/class-diagram-turnstile-sim.png)
 
 ### 6.4. Luồng `TurnstileSimulatorService.open`
 ```

@@ -92,7 +92,9 @@ access::domain ◄─realize── turnstile::infrastructure ──HTTP (LAN nh�
 | `CommandStatusBody` | record | — | Phản hồi kiểm tra lệnh |
 
 ### 6.3. Sơ đồ lớp
-Nguồn: [class-gate-agent-turnstile.drawio](../drawio/class-gate-agent-turnstile.drawio) · Ảnh: ![class diagram](../images/class-gate-agent-turnstile.png)
+Nguồn: [class-diagram.drawio](../drawio/class-diagram.drawio), tab `gate-agent-turnstile`. Lớp được tô màu theo tầng (api xanh dương, application xanh lá, domain vàng, infrastructure cam, module/thư viện khác xám); record/DTO không vẽ, chỉ xuất hiện làm kiểu trong chữ ký.
+
+![class diagram](../images/class-diagram-gate-agent-turnstile.png)
 
 ### 6.4. Luồng `HttpTurnstileAdapter.open`
 ```

@@ -65,7 +65,9 @@ Port sử dụng: `ScanAttemptStore.findPending() : List<ScanAttempt>` (định 
 | `PendingReconcileService` | application | `@Service` | Logic lọc lượt tồn đọng |
 
 ### 6.3. Sơ đồ lớp
-Nguồn: [class-gate-agent-guard.drawio](../drawio/class-gate-agent-guard.drawio) · Ảnh: ![class diagram](../images/class-gate-agent-guard.png)
+Nguồn: [class-diagram.drawio](../drawio/class-diagram.drawio), tab `gate-agent-guard`. Lớp được tô màu theo tầng (api xanh dương, application xanh lá, domain vàng, infrastructure cam, module/thư viện khác xám); record/DTO không vẽ, chỉ xuất hiện làm kiểu trong chữ ký.
+
+![class diagram](../images/class-diagram-gate-agent-guard.png)
 
 ### 6.4. Luồng xử lý
 ```

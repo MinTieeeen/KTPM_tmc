@@ -135,7 +135,9 @@ C2 phụ thuộc `iam.api` (`AuthApi`) và `sync-contract` (`QrTokenFormat`); C1
 | `EmployeeExceptionHandler` | infrastructure | `@RestControllerAdvice` | |
 
 ### 6.3. Sơ đồ lớp
-Nguồn: [class-central-employee.drawio](../drawio/class-central-employee.drawio) · Ảnh: ![class diagram](../images/class-central-employee.png)
+Nguồn: [class-diagram.drawio](../drawio/class-diagram.drawio), tab `central-employee`. Lớp được tô màu theo tầng (api xanh dương, application xanh lá, domain vàng, infrastructure cam, module/thư viện khác xám); record/DTO không vẽ, chỉ xuất hiện làm kiểu trong chữ ký.
+
+![class diagram](../images/class-diagram-central-employee.png)
 
 ### 6.4. Luồng xử lý
 **Lấy mã QR**

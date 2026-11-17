@@ -40,7 +40,7 @@ tmc/
 ├── gate-agent/              Q1 – G1..G4, G5 rút gọn
 ├── central/                 Q2 – C1..C3, C7
 ├── simulators/              turnstile-sim
-├── docs/                    phân công, quy trình; spec/ (SRS), drawio/ + images/ (sơ đồ lớp)
+├── docs/                    phân công, quy trình; spec/ (SRS), drawio/class-diagram.drawio + images/ (sơ đồ lớp)
 ├── web/                     React + TypeScript + Vite (hai build target: gate, central)
 ├── deploy/                  docker-compose.yml, Dockerfile, env, script demo
 ├── tests/                   e2e (T1–T11), load (k6)

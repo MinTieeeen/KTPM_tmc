@@ -100,7 +100,9 @@ C1 gọi trực tiếp interface của C3 thay vì phát sự kiện, để khô
 | `Jpa*Repository` (3) | infrastructure | Spring Data interface | |
 
 ### 6.3. Sơ đồ lớp
-Nguồn: [class-central-station.drawio](../drawio/class-central-station.drawio) · Ảnh: ![class diagram](../images/class-central-station.png)
+Nguồn: [class-diagram.drawio](../drawio/class-diagram.drawio), tab `central-station`. Lớp được tô màu theo tầng (api xanh dương, application xanh lá, domain vàng, infrastructure cam, module/thư viện khác xám); record/DTO không vẽ, chỉ xuất hiện làm kiểu trong chữ ký.
+
+![class diagram](../images/class-diagram-central-station.png)
 
 ### 6.4. Luồng xử lý
 ```
