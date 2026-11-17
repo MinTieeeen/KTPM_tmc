@@ -1,0 +1,444 @@
+openapi: 3.0.3
+info:
+  title: TMC Gate Agent API
+  version: 1.0.0
+  description: |
+    HTTP API of the **Gate Agent** (Q1 Gate Quantum) running inside each factory
+    (`gate-bd` for Binh Duong, `gate-la` for Long An).
+
+    | Consumer | Endpoints |
+    |---|---|
+    | Kiosk (`kiosk.html`, FE-1) | `POST /scan`, `GET /status` |
+    | Guard / demo operator | `GET /guard/pending` |
+    | Demo scripts, Kiosk demo panel | `POST /admin/simulate-offline` (profile `demo` only) |
+
+    **Authentication:** none. The Gate Agent is only reachable from the factory LAN; the kiosk has
+    no user account (ADR-08). Every request is anonymous.
+
+    **Conventions** (see `docs/api/README.md` for the full list):
+    - JSON, UTF-8. Timestamps are ISO-8601 in UTC with a `Z` suffix, e.g. `2026-11-20T07:58:01.120Z`.
+    - Fields whose value is `null` are **omitted** from responses (Jackson `non_null`).
+    - Errors use RFC 9457 Problem Details (`application/problem+json`) with an extra `code` member.
+
+    Owner: BE-1 · Reviewer: FE-1 · Specification: `docs/spec/gate-agent-access.md`,
+    `docs/spec/gate-agent-sync.md`, `docs/spec/gate-agent-guard.md`.
+  contact:
+    name: TMC team (BE-1)
+servers:
+  - url: http://localhost:8081
+    description: gate-bd (Docker Compose / local)
+  - url: http://localhost:8082
+    description: gate-la (Docker Compose)
+  - url: http://localhost:5173
+    description: Vite dev server (proxies /scan, /status, /admin/simulate-offline to :8081)
+security: []   # anonymous by design: only reachable from the factory LAN (ADR-08)
+tags:
+  - name: scan
+    description: QR scanning at a gate station (flow F1)
+  - name: status
+    description: Gate health and connectivity for the kiosk banner
+  - name: guard
+    description: Reconciliation of scans left PENDING after a restart (G5, reduced scope)
+  - name: demo
+    description: Fault injection for demonstrations (profile `demo` only)
+
+paths:
+  /scan:
+    post:
+      tags: [scan]
+      operationId: scan
+      summary: Validate a QR token and open the turnstile
+      description: |
+        Processes one scan synchronously (flow F1): verify the token signature and validity window,
+        check the station, the offline threshold, the credential, the nonce and anti-passback, persist
+        the attempt, ask the turnstile to open and record the attendance transaction.
+
+        **The business outcome is always returned with HTTP 200** – look at `result`:
+
+        | `result` | Meaning | Kiosk screen |
+        |---|---|---|
+        | `ACCEPTED` | Turnstile confirmed open, attendance recorded | green |
+        | `REJECTED` | A rule failed, nothing was sent to the turnstile | red + reason |
+        | `GATE_FAILED` | Rules passed but the turnstile did not confirm opening | orange: "see the guard" |
+
+        **Timing contract:** the server answers within 2 s (p95 ≈ 1.1 s, worst case ≈ 1.3 s).
+        The kiosk must abort the request after **2000 ms** and show *"Unknown result – please see the guard"*.
+        The kiosk must **not retry** a scan automatically: the nonce is consumed on the first call, so a
+        retry would be rejected with `NONCE_REUSED`.
+
+        **Not idempotent:** each call creates a new scan attempt identified by `eventId`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScanRequest'
+            examples:
+              scan:
+                value:
+                  stationId: BD-IN-01
+                  raw: TMC1.eyJ2IjoxLCJjaWQiOiI2ZjFjMmQ0YS0uLi4ifQ.MEUCIQ...
+      responses:
+        '200':
+          description: Scan processed. Inspect `result`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScanResponse'
+              examples:
+                accepted:
+                  summary: ACCEPTED – gate opened
+                  value:
+                    result: ACCEPTED
+                    employeeCode: E0012
+                    direction: IN
+                    elapsedMs: 612
+                    eventId: 0b9d6c1e-3f5a-4a52-9a0e-7a6c2b1d9e01
+                rejectedReused:
+                  summary: REJECTED – token already used (replayed screenshot)
+                  value:
+                    result: REJECTED
+                    reason: NONCE_REUSED
+                    direction: IN
+                    elapsedMs: 41
+                    eventId: 7c1e2a90-5b7d-4c11-8f0e-1d2c3b4a5e60
+                rejectedExpired:
+                  summary: REJECTED – token expired
+                  value:
+                    result: REJECTED
+                    reason: EXPIRED
+                    direction: IN
+                    elapsedMs: 18
+                    eventId: 2d4f6a80-1c3e-4b5d-8f70-9a1b2c3d4e5f
+                gateFailed:
+                  summary: GATE_FAILED – turnstile timeout
+                  value:
+                    result: GATE_FAILED
+                    reason: GATE_TIMEOUT
+                    employeeCode: E0012
+                    direction: IN
+                    elapsedMs: 1046
+                    eventId: 9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          description: |
+            The attempt could not be persisted locally (`LOCAL_STORE_ERROR`). The turnstile was **not**
+            reported as open; the kiosk shows *"Unknown result – please see the guard"*.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: about:blank
+                title: Internal Server Error
+                status: 500
+                detail: Local store unavailable
+                code: LOCAL_STORE_ERROR
+
+  /status:
+    get:
+      tags: [status]
+      operationId: getStatus
+      summary: Gate connectivity and health
+      description: |
+        Polled by the kiosk every **3 s** to show the OFFLINE banner (NFR-AVL-04).
+
+        Kiosk rules:
+        - `online == false` → show banner *"OFFLINE – {outboxDepth} records waiting to sync"*.
+        - `offlineThresholdExceeded == true` → additionally show *"Entry temporarily suspended"* on
+          entry (`IN`) stations; exit stations keep working.
+        - If this call itself fails (network error or > 2 s), keep the last known state and show
+          *"Kiosk cannot reach the gate service"*.
+      responses:
+        '200':
+          description: Current state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+              examples:
+                online:
+                  value:
+                    gateId: gate-bd
+                    online: true
+                    lastSyncAt: '2026-11-20T07:58:02.004Z'
+                    outboxDepth: 0
+                    offlineThresholdExceeded: false
+                    pendingReconcile: 0
+                    turnstiles:
+                      BD-IN-01: UP
+                      BD-OUT-01: UP
+                offline:
+                  value:
+                    gateId: gate-bd
+                    online: false
+                    lastSyncAt: '2026-11-20T07:41:10.512Z'
+                    outboxDepth: 37
+                    offlineThresholdExceeded: true
+                    pendingReconcile: 1
+                    turnstiles:
+                      BD-IN-01: UP
+                      BD-OUT-01: CIRCUIT_OPEN
+
+  /guard/pending:
+    get:
+      tags: [guard]
+      operationId: listPendingScans
+      summary: Scans left PENDING after a restart
+      description: |
+        Scans that were persisted as `PENDING` (before the turnstile call) but never finalised because
+        the Gate Agent stopped. Only attempts that occurred **before the current process started** are
+        listed, sorted by `occurredAt` ascending. Read-only.
+      responses:
+        '200':
+          description: Possibly empty list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PendingScan'
+              example:
+                - eventId: 3e5f7a9b-1c2d-4e6f-8a0b-2c4d6e8f0a1b
+                  stationId: BD-IN-01
+                  credentialId: 6f1c2d4a-8b9e-4f01-a2b3-c4d5e6f70812
+                  occurredAt: '2026-11-20T07:58:01.120Z'
+        '500':
+          $ref: '#/components/responses/LocalStoreError'
+
+  /admin/simulate-offline:
+    post:
+      tags: [demo]
+      operationId: simulateOffline
+      summary: Simulate loss of the WAN link to Central
+      description: |
+        **Demo profile only** (`tmc.gate.fault-injection.enabled=true`); otherwise the endpoint does
+        not exist and returns 404. While `offline` is true the Gate Agent behaves exactly as if Central
+        were unreachable: the outbox grows, `GET /status` reports `online: false`, and after the
+        offline threshold (2 min in the demo profile) entry scans are rejected with
+        `OFFLINE_THRESHOLD_EXCEEDED`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimulateOfflineRequest'
+            example:
+              offline: true
+      responses:
+        '204':
+          description: Applied
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          description: Fault injection is disabled (not the `demo` profile)
+
+components:
+  responses:
+    ValidationError:
+      description: Malformed request body (`VALIDATION_ERROR`)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: about:blank
+            title: Bad Request
+            status: 400
+            detail: Request validation failed
+            code: VALIDATION_ERROR
+            errors:
+              - field: raw
+                message: must not be blank
+    LocalStoreError:
+      description: Local SQLite store unavailable (`LOCAL_STORE_ERROR`)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+  schemas:
+    StationId:
+      type: string
+      pattern: '^[A-Z]{2}-(IN|OUT)-[0-9]{2}$'
+      description: Gate station identifier, `<factory>-<direction>-<number>`.
+      example: BD-IN-01
+
+    ScanRequest:
+      type: object
+      required: [stationId, raw]
+      additionalProperties: false
+      properties:
+        stationId:
+          $ref: '#/components/schemas/StationId'
+        raw:
+          type: string
+          minLength: 1
+          maxLength: 1024
+          description: |
+            The exact string read by the scanner (USB scanner types it and sends Enter, or the webcam
+            decoder returns it). Expected format `TMC1.<base64url payload>.<base64url signature>`,
+            but **any** non-blank string is accepted here – format problems are reported as
+            `REJECTED / INVALID_FORMAT`, not as HTTP 400. Trim the trailing newline before sending.
+            Never log this value.
+
+    ScanResult:
+      type: string
+      enum: [ACCEPTED, REJECTED, GATE_FAILED]
+
+    RejectReason:
+      type: string
+      description: |
+        Why a scan was not accepted. `REJECTED` uses the first 13 values, `GATE_FAILED` uses the last 3.
+        Display texts are defined in `docs/api/README.md` § Reject reasons.
+      enum:
+        - INVALID_FORMAT
+        - UNKNOWN_KEY
+        - BAD_SIGNATURE
+        - EXPIRED
+        - NOT_YET_VALID
+        - UNKNOWN_STATION
+        - STATION_DISABLED
+        - OFFLINE_THRESHOLD_EXCEEDED
+        - CREDENTIAL_NOT_FOUND
+        - CREDENTIAL_REVOKED
+        - EMPLOYEE_INACTIVE
+        - NONCE_REUSED
+        - ANTI_PASSBACK
+        - GATE_TIMEOUT
+        - GATE_ERROR
+        - CIRCUIT_OPEN
+
+    Direction:
+      type: string
+      enum: [IN, OUT]
+
+    ScanResponse:
+      type: object
+      required: [result, elapsedMs, eventId]
+      properties:
+        result:
+          $ref: '#/components/schemas/ScanResult'
+        reason:
+          allOf:
+            - $ref: '#/components/schemas/RejectReason'
+          description: Present when `result` is `REJECTED` or `GATE_FAILED`; omitted for `ACCEPTED`.
+        employeeCode:
+          type: string
+          pattern: '^E[0-9]{4}$'
+          example: E0012
+          description: |
+            Present for `ACCEPTED` and `GATE_FAILED` only (the credential was validated). Never present
+            for `REJECTED`. Only the code is returned, never the employee's name (DP-12).
+        direction:
+          allOf:
+            - $ref: '#/components/schemas/Direction'
+          description: |
+            Direction of the station. Present whenever `stationId` exists in the gate's local station
+            list (even when the token itself was rejected); omitted only for `UNKNOWN_STATION`.
+        elapsedMs:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Server-side processing time from request receipt to response, in milliseconds.
+        eventId:
+          type: string
+          format: uuid
+          description: Identifier of the scan attempt (useful when the guard reconciles).
+
+    TurnstileHealth:
+      type: string
+      enum: [UP, DOWN, CIRCUIT_OPEN]
+      description: |
+        `UP` last command succeeded (or none sent yet); `DOWN` last command failed;
+        `CIRCUIT_OPEN` too many consecutive failures – commands are not sent for 30 s.
+
+    StatusResponse:
+      type: object
+      required: [gateId, online, outboxDepth, offlineThresholdExceeded, pendingReconcile, turnstiles]
+      properties:
+        gateId:
+          type: string
+          example: gate-bd
+        online:
+          type: boolean
+          description: True when the last successful exchange with Central is at most 30 s old.
+        lastSyncAt:
+          type: string
+          format: date-time
+          description: Last successful exchange with Central. Omitted if the gate never synced.
+        outboxDepth:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Number of events waiting to be pushed to Central.
+        offlineThresholdExceeded:
+          type: boolean
+          description: True when offline for longer than the threshold (8 h, 2 min in demo) or never synced. Entry scans are then rejected.
+        pendingReconcile:
+          type: integer
+          minimum: 0
+          description: Scans stuck in PENDING (older than 5 s) that the guard should reconcile.
+        turnstiles:
+          type: object
+          description: Turnstile health per station id.
+          additionalProperties:
+            $ref: '#/components/schemas/TurnstileHealth'
+
+    PendingScan:
+      type: object
+      required: [eventId, stationId, occurredAt]
+      properties:
+        eventId:
+          type: string
+          format: uuid
+        stationId:
+          $ref: '#/components/schemas/StationId'
+        credentialId:
+          type: string
+          format: uuid
+        occurredAt:
+          type: string
+          format: date-time
+
+    SimulateOfflineRequest:
+      type: object
+      required: [offline]
+      additionalProperties: false
+      properties:
+        offline:
+          type: boolean
+
+    Problem:
+      type: object
+      description: RFC 9457 Problem Details with the TMC `code` extension.
+      required: [title, status, code]
+      properties:
+        type:
+          type: string
+          default: about:blank
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        code:
+          type: string
+          description: Stable machine-readable error code (see README § Error codes). Clients branch on this, never on `title`/`detail`.
+        errors:
+          type: array
+          description: Field errors, present for `VALIDATION_ERROR` only.
+          items:
+            $ref: '#/components/schemas/FieldError'
+    FieldError:
+      type: object
+      required: [field, message]
+      properties:
+        field:
+          type: string
+        message:
+          type: string

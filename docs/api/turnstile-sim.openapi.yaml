@@ -1,0 +1,294 @@
+openapi: 3.0.3
+info:
+  title: TMC Turnstile Simulator API
+  version: 1.0.0
+  description: |
+    Stand-in for the turnstile vendor's controller API (one instance per factory). Called by the Gate
+    Agent adapter `HttpTurnstileAdapter` (G2) and by the demo script `deploy/scripts/sim.sh`.
+
+    **Authentication:** none (isolated factory LAN `lan-bd` / `lan-la`).
+
+    **Client timeouts expected by the Gate Agent:** `open` 800 ms, `commands/{requestId}` 200 ms.
+
+    Turnstiles are created on first use – any `id` is accepted, the stations use
+    `TS-<stationId>` (e.g. `TS-BD-IN-01`). State is kept in memory and lost on restart.
+
+    Owner: BE-2 · Reviewer: BE-1 · Specification: `docs/spec/turnstile-sim.md`.
+servers:
+  - url: http://localhost:9001
+    description: turnstile-sim-bd
+  - url: http://localhost:9002
+    description: turnstile-sim-la
+security: []   # anonymous by design: only reachable from the factory LAN (ADR-08)
+tags:
+  - name: turnstile
+    description: Vendor-like API used by the Gate Agent
+  - name: admin
+    description: Behaviour control for demos and tests
+
+paths:
+  /turnstiles:
+    get:
+      tags: [turnstile]
+      operationId: listTurnstiles
+      summary: All known turnstiles
+      responses:
+        '200':
+          description: List (possibly empty)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TurnstileStatus'
+
+  /turnstiles/{id}/open:
+    post:
+      tags: [turnstile]
+      operationId: openTurnstile
+      summary: Open the turnstile once
+      description: |
+        Idempotent on `requestId`: a request id that was already executed returns 200 immediately with
+        `duplicate: true` and the original `at`, whatever the current mode is, and the turnstile does
+        not open a second time.
+
+        Behaviour per mode (see `PUT /admin/behavior`):
+
+        | Mode | Opens? | Response |
+        |---|---|---|
+        | `NORMAL` | yes (unless the random failure hits) | 200 after a random latency in `latencyMs`; 500 with probability `failureRate` |
+        | `TIMEOUT` | no | 504 after 5 s |
+        | `ERROR` | no | 500 immediately |
+        | `EXECUTE_THEN_TIMEOUT` | yes | 200 after 5 s (the gate times out first) |
+      parameters:
+        - $ref: '#/components/parameters/TurnstileId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OpenRequest'
+            example:
+              requestId: 0b9d6c1e-3f5a-4a52-9a0e-7a6c2b1d9e01
+      responses:
+        '200':
+          description: Opened (or already opened for this request id)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpenResponse'
+              example:
+                requestId: 0b9d6c1e-3f5a-4a52-9a0e-7a6c2b1d9e01
+                executed: true
+                duplicate: false
+                at: '2026-11-20T07:58:01.700Z'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          description: Simulated controller failure (`SIMULATED_ERROR`); the turnstile did not open.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '504':
+          description: Simulated timeout (`SIMULATED_TIMEOUT`); the turnstile did not open.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+  /turnstiles/{id}/commands/{requestId}:
+    get:
+      tags: [turnstile]
+      operationId: getCommandStatus
+      summary: Was this open command executed?
+      description: 'Answers immediately, independent of the mode and latency. Unknown ids return `executed: false`.'
+      parameters:
+        - $ref: '#/components/parameters/TurnstileId'
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Command status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandStatus'
+              examples:
+                executed:
+                  value: { executed: true, at: '2026-11-20T07:58:01.700Z' }
+                notExecuted:
+                  value: { executed: false }
+
+  /turnstiles/{id}/status:
+    get:
+      tags: [turnstile]
+      operationId: getTurnstileStatus
+      summary: Turnstile status
+      parameters:
+        - $ref: '#/components/parameters/TurnstileId'
+      responses:
+        '200':
+          description: Status (`DOWN` while the mode is `ERROR`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TurnstileStatus'
+
+  /admin/behavior:
+    get:
+      tags: [admin]
+      operationId: getBehavior
+      summary: Current behaviour
+      responses:
+        '200':
+          description: Current behaviour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Behavior'
+    put:
+      tags: [admin]
+      operationId: updateBehavior
+      summary: Change behaviour (partial update)
+      description: Omitted fields keep their value. Applies to the next request.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BehaviorRequest'
+            examples:
+              timeout:
+                value: { mode: TIMEOUT }
+              normal:
+                value: { mode: NORMAL, latencyMs: [300, 500], failureRate: 0.0 }
+      responses:
+        '200':
+          description: Behaviour after the update
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Behavior'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+components:
+  parameters:
+    TurnstileId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        example: TS-BD-IN-01
+
+  responses:
+    ValidationError:
+      description: '`VALIDATION_ERROR` – e.g. missing `requestId`, `latencyMs[0] > latencyMs[1]`, `failureRate` outside [0, 1], unknown `mode`.'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+  schemas:
+    BehaviorMode:
+      type: string
+      enum: [NORMAL, TIMEOUT, ERROR, EXECUTE_THEN_TIMEOUT]
+    OpenRequest:
+      type: object
+      required: [requestId]
+      properties:
+        requestId:
+          type: string
+          format: uuid
+          description: The Gate Agent sends the scan `eventId`.
+    OpenResponse:
+      type: object
+      required: [requestId, executed, duplicate, at]
+      properties:
+        requestId:
+          type: string
+          format: uuid
+        executed:
+          type: boolean
+        duplicate:
+          type: boolean
+        at:
+          type: string
+          format: date-time
+    CommandStatus:
+      type: object
+      required: [executed]
+      properties:
+        executed:
+          type: boolean
+        at:
+          type: string
+          format: date-time
+          description: Present when `executed` is true.
+    TurnstileStatus:
+      type: object
+      required: [turnstileId, status, openCount]
+      properties:
+        turnstileId:
+          type: string
+        status:
+          type: string
+          enum: [UP, DOWN]
+        openCount:
+          type: integer
+          format: int64
+    Behavior:
+      type: object
+      required: [latencyMs, failureRate, mode]
+      properties:
+        latencyMs:
+          type: array
+          minItems: 2
+          maxItems: 2
+          items:
+            type: integer
+            minimum: 0
+          description: '[min, max] latency in ms for NORMAL mode. Default [300, 500].'
+        failureRate:
+          type: number
+          minimum: 0
+          maximum: 1
+        mode:
+          $ref: '#/components/schemas/BehaviorMode'
+    BehaviorRequest:
+      type: object
+      properties:
+        latencyMs:
+          type: array
+          minItems: 2
+          maxItems: 2
+          items:
+            type: integer
+            minimum: 0
+        failureRate:
+          type: number
+          minimum: 0
+          maximum: 1
+        mode:
+          $ref: '#/components/schemas/BehaviorMode'
+    Problem:
+      type: object
+      required: [title, status, code]
+      properties:
+        type:
+          type: string
+          default: about:blank
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        code:
+          type: string

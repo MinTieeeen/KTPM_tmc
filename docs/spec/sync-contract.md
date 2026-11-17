@@ -1,6 +1,7 @@
 # SRS – `sync-contract` (hợp đồng dữ liệu Q1 ↔ Q2)
 
 > Trạng thái: Draft · Người viết: BE-2 · Người duyệt: BE-1 · Ngày: 17/11/2026
+> Hợp đồng API: [../api/sync.md](../api/sync.md) (OpenAPI: [../api/sync.openapi.yaml](../api/sync.openapi.yaml))
 
 ## 1. Giới thiệu
 

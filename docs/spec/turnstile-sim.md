@@ -1,6 +1,7 @@
 # SRS – `simulators/turnstile-sim` (bộ giả lập cổng xoay)
 
 > Trạng thái: Draft · Người viết: BE-2 · Người duyệt: BE-1 · Ngày: 17/11/2026
+> Hợp đồng API: [../api/turnstile-sim.md](../api/turnstile-sim.md) (OpenAPI: [../api/turnstile-sim.openapi.yaml](../api/turnstile-sim.openapi.yaml))
 
 ## 1. Giới thiệu
 

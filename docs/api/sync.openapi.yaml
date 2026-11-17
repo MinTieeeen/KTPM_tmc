@@ -1,0 +1,505 @@
+openapi: 3.0.3
+info:
+  title: TMC Sync API (Gate Agent ↔ Central)
+  version: 1.0.0
+  description: |
+    The only connector between the two architecture quanta (ADR-01, ADR-05). Served by **Central**
+    module `ingestion` (C1) and called by the **Gate Agent** module `sync` (G4). Bodies are the Java
+    records of the `sync-contract` library (`contractVersion = 1`); this document is their
+    language-neutral definition.
+
+    | Endpoint | Called by | Period |
+    |---|---|---|
+    | `POST /sync/events` | `OutboxPusher` | every 2 s while the outbox is not empty |
+    | `GET /sync/snapshot` | `SnapshotPuller` | every 15 s (must be ≤ 60 s, NFR-SEC-06) |
+    | `POST /sync/heartbeat` | `HeartbeatSender` | every 10 s |
+
+    **Authentication:** header `X-Gate-Key` (one key per gate, replaces mTLS in the MVP). JWTs are
+    **not** accepted on `/sync/**`. The key identifies the gate; Central checks that `gateId` in the
+    body matches it and that every station belongs to that gate's factory (DP-11).
+
+    **Delivery semantics:** at-least-once. The gate resends anything not acknowledged; Central is
+    idempotent on `eventId` (INV-06), so a resend never creates a duplicate.
+
+    **Timeouts (client side):** connect 2 s, read 5 s. Network errors, timeouts, 5xx and 401 leave the
+    outbox untouched and are retried at the next period.
+
+    **Compatibility:** adding optional fields is backward compatible (receivers ignore unknown fields).
+    Removing/renaming a field or changing its meaning requires `contractVersion` + 1 and a PR approved
+    by both BE-1 and BE-2.
+
+    Owner: BE-2 · Reviewer: BE-1 · Specification: `docs/spec/sync-contract.md`,
+    `docs/spec/central-ingestion.md`, `docs/spec/gate-agent-sync.md`.
+servers:
+  - url: http://localhost:8080
+    description: Central (from the host)
+  - url: http://central:8080
+    description: Central (inside the Docker network `wan`)
+tags:
+  - name: sync
+    description: Outbox push, reference-data pull and heartbeat between a Gate Agent and Central
+security:
+  - gateKey: []
+
+paths:
+  /sync/events:
+    post:
+      tags: [sync]
+      operationId: pushEvents
+      summary: Push a batch of outbox events
+      description: |
+        Each event is processed independently and classified in exactly one list of the `BatchAck`:
+
+        | List | Meaning | Gate action |
+        |---|---|---|
+        | `accepted` | Stored now | mark `SYNCED` |
+        | `duplicates` | Already stored earlier (same `eventId`) | mark `SYNCED` |
+        | `rejected` | Invalid, will never be accepted | mark `REJECTED`, log, do not resend |
+
+        An `eventId` missing from all three lists stays `PENDING` and is resent. Problems with the batch
+        as a whole (version, size, gate identity) return 4xx and nothing is stored.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventBatch'
+            example:
+              contractVersion: 1
+              gateId: gate-bd
+              factoryId: BD
+              events:
+                - eventId: 0b9d6c1e-3f5a-4a52-9a0e-7a6c2b1d9e01
+                  type: SCAN_ATTEMPT_RECORDED
+                  occurredAt: '2026-11-20T07:58:01.120Z'
+                  payload:
+                    eventId: 0b9d6c1e-3f5a-4a52-9a0e-7a6c2b1d9e01
+                    stationId: BD-IN-01
+                    credentialId: 6f1c2d4a-8b9e-4f01-a2b3-c4d5e6f70812
+                    result: ACCEPTED
+                    occurredAt: '2026-11-20T07:58:01.120Z'
+                - eventId: 5e21a7c3-9d0b-4e8f-a1c2-3b4d5e6f7a80
+                  type: ATTENDANCE_RECORDED
+                  occurredAt: '2026-11-20T07:58:01.731Z'
+                  payload:
+                    eventId: 5e21a7c3-9d0b-4e8f-a1c2-3b4d5e6f7a80
+                    scanEventId: 0b9d6c1e-3f5a-4a52-9a0e-7a6c2b1d9e01
+                    employeeCode: E0012
+                    stationId: BD-IN-01
+                    direction: IN
+                    occurredAt: '2026-11-20T07:58:01.731Z'
+      responses:
+        '200':
+          description: Batch processed (also when every event is a duplicate)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchAck'
+              example:
+                accepted: [0b9d6c1e-3f5a-4a52-9a0e-7a6c2b1d9e01]
+                duplicates: [5e21a7c3-9d0b-4e8f-a1c2-3b4d5e6f7a80]
+                rejected: []
+        '400':
+          description: '`UNSUPPORTED_CONTRACT_VERSION`, `BATCH_TOO_LARGE` (> 200 events) or `VALIDATION_ERROR` (malformed batch envelope).'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: about:blank
+                title: Bad Request
+                status: 400
+                detail: contractVersion 2 is not supported
+                code: UNSUPPORTED_CONTRACT_VERSION
+        '401':
+          $ref: '#/components/responses/InvalidGateKey'
+        '403':
+          description: '`GATE_MISMATCH` (body `gateId` differs from the key''s gate) or `UNKNOWN_GATE` (gate not registered at Central).'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '500':
+          description: Unexpected storage failure; the whole batch is rolled back and must be resent.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+  /sync/snapshot:
+    get:
+      tags: [sync]
+      operationId: getSnapshot
+      summary: Pull reference-data changes since a version
+      description: |
+        Returns the **latest state** of every credential, public key and station that changed after
+        version `since` (several changes of the same item are merged into one entry).
+        - `since=0` returns the full reference data (first start or local store reset).
+        - `since` negative or greater than Central's current version → full data from 0 with
+          `fromVersion = 0` (the gate resynchronises).
+        - No change → empty lists and `toVersion == fromVersion`.
+
+        The gate applies the whole delta in one local transaction and then stores `toVersion`. A delta
+        whose `fromVersion` differs from the gate's stored version (other than 0) is ignored.
+      parameters:
+        - name: since
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+            default: 0
+      responses:
+        '200':
+          description: Delta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SnapshotDelta'
+              example:
+                fromVersion: 41
+                toVersion: 44
+                credentials:
+                  - credentialId: 0a9b8c7d-6e5f-4a3b-9c2d-1e0f2a3b4c5d
+                    employeeCode: E0020
+                    status: REVOKED
+                    employeeActive: true
+                    updatedAt: '2026-11-20T08:00:00Z'
+                publicKeys:
+                  - kid: k-demo
+                    publicKeyBase64: MCowBQYDK2VwAyEAGb9ECWmEzf6FQbrBZ9w7lshQhqowtrbLDFw4rXAxZuE=
+                    active: true
+                stations:
+                  - stationId: BD-IN-01
+                    factoryId: BD
+                    direction: IN
+                    enabled: true
+                    turnstileId: TS-BD-IN-01
+                settings:
+                  offlineThresholdMinutes: 480
+        '401':
+          $ref: '#/components/responses/InvalidGateKey'
+
+  /sync/heartbeat:
+    post:
+      tags: [sync]
+      operationId: sendHeartbeat
+      summary: Report gate health
+      description: |
+        Stored as the latest heartbeat of the gate (older `sentAt` values are ignored). The Admin
+        "Stations" tab considers a gate offline when no heartbeat was received for 30 s.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Heartbeat'
+            example:
+              gateId: gate-bd
+              sentAt: '2026-11-20T08:00:10Z'
+              outboxDepth: 0
+              lastSyncAt: '2026-11-20T08:00:02Z'
+              turnstileStatus:
+                BD-IN-01: UP
+                BD-OUT-01: CIRCUIT_OPEN
+      responses:
+        '204':
+          description: Recorded
+        '400':
+          description: '`VALIDATION_ERROR` or `GATE_MISMATCH` (body `gateId` differs from the key''s gate).'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          $ref: '#/components/responses/InvalidGateKey'
+        '403':
+          description: '`UNKNOWN_GATE`'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+components:
+  securitySchemes:
+    gateKey:
+      type: apiKey
+      in: header
+      name: X-Gate-Key
+      description: Per-gate secret configured as `GATE_API_KEY` on the gate and `GATE_API_KEYS` (`gateId=key,…`) on Central. Never logged.
+
+  responses:
+    InvalidGateKey:
+      description: Missing or unknown `X-Gate-Key` (`INVALID_GATE_KEY`)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: about:blank
+            title: Unauthorized
+            status: 401
+            code: INVALID_GATE_KEY
+
+  schemas:
+    EventBatch:
+      type: object
+      required: [contractVersion, gateId, factoryId, events]
+      properties:
+        contractVersion:
+          type: integer
+          enum: [1]
+        gateId:
+          type: string
+          example: gate-bd
+        factoryId:
+          type: string
+          example: BD
+        events:
+          type: array
+          minItems: 1
+          maxItems: 200
+          description: Ordered by the gate's outbox sequence (oldest first).
+          items:
+            $ref: '#/components/schemas/EventEnvelope'
+
+    EventType:
+      type: string
+      enum: [SCAN_ATTEMPT_RECORDED, ATTENDANCE_RECORDED]
+
+    EventEnvelope:
+      type: object
+      required: [eventId, type, occurredAt, payload]
+      properties:
+        eventId:
+          type: string
+          format: uuid
+          description: Generated at the gate; idempotency key. Must equal `payload.eventId`.
+        type:
+          $ref: '#/components/schemas/EventType'
+        occurredAt:
+          type: string
+          format: date-time
+        payload:
+          description: '`ScanAttemptPayload` when `type = SCAN_ATTEMPT_RECORDED`, `AttendancePayload` when `type = ATTENDANCE_RECORDED`.'
+          oneOf:
+            - $ref: '#/components/schemas/ScanAttemptPayload'
+            - $ref: '#/components/schemas/AttendancePayload'
+
+    ScanAttemptPayload:
+      type: object
+      required: [eventId, stationId, result, occurredAt]
+      properties:
+        eventId:
+          type: string
+          format: uuid
+        stationId:
+          type: string
+          example: BD-IN-01
+        credentialId:
+          type: string
+          format: uuid
+          description: Omitted when the token could not be decoded (INV-07).
+        result:
+          type: string
+          enum: [ACCEPTED, REJECTED, GATE_FAILED]
+          description: '`PENDING` attempts are never sent.'
+        reason:
+          type: string
+          description: A `RejectReason` name (see gate-agent.openapi.yaml); omitted when `ACCEPTED`.
+          example: NONCE_REUSED
+        occurredAt:
+          type: string
+          format: date-time
+
+    AttendancePayload:
+      type: object
+      required: [eventId, scanEventId, employeeCode, stationId, direction, occurredAt]
+      properties:
+        eventId:
+          type: string
+          format: uuid
+        scanEventId:
+          type: string
+          format: uuid
+          description: The accepted scan attempt that produced this transaction (unique).
+        employeeCode:
+          type: string
+          pattern: '^E[0-9]{4}$'
+        stationId:
+          type: string
+        direction:
+          type: string
+          enum: [IN, OUT]
+        occurredAt:
+          type: string
+          format: date-time
+          description: Time the turnstile confirmed opening.
+
+    BatchAck:
+      type: object
+      required: [accepted, duplicates, rejected]
+      properties:
+        accepted:
+          type: array
+          items:
+            type: string
+            format: uuid
+        duplicates:
+          type: array
+          items:
+            type: string
+            format: uuid
+        rejected:
+          type: array
+          items:
+            $ref: '#/components/schemas/RejectedEvent'
+
+    RejectedEvent:
+      type: object
+      required: [eventId, reason]
+      properties:
+        eventId:
+          type: string
+          format: uuid
+        reason:
+          type: string
+          enum: [INVALID_PAYLOAD, UNKNOWN_EVENT_TYPE, UNKNOWN_STATION, STATION_NOT_IN_FACTORY]
+
+    SnapshotDelta:
+      type: object
+      required: [fromVersion, toVersion, credentials, publicKeys, stations, settings]
+      properties:
+        fromVersion:
+          type: integer
+          format: int64
+        toVersion:
+          type: integer
+          format: int64
+        credentials:
+          type: array
+          items:
+            $ref: '#/components/schemas/CredentialEntry'
+        publicKeys:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicKey'
+        stations:
+          type: array
+          items:
+            $ref: '#/components/schemas/StationConfig'
+        settings:
+          $ref: '#/components/schemas/GateSettings'
+
+    CredentialEntry:
+      type: object
+      description: Java record `CredentialEntryDto`. Contains no personal name (DP-12).
+      required: [credentialId, employeeCode, status, employeeActive, updatedAt]
+      properties:
+        credentialId:
+          type: string
+          format: uuid
+        employeeCode:
+          type: string
+          pattern: '^E[0-9]{4}$'
+        status:
+          type: string
+          enum: [ACTIVE, REVOKED]
+        employeeActive:
+          type: boolean
+        updatedAt:
+          type: string
+          format: date-time
+
+    PublicKey:
+      type: object
+      description: Java record `PublicKeyDto`.
+      required: [kid, publicKeyBase64, active]
+      properties:
+        kid:
+          type: string
+          example: k-demo
+        publicKeyBase64:
+          type: string
+          format: byte
+          description: Ed25519 public key, X.509 SubjectPublicKeyInfo DER, standard base64.
+        active:
+          type: boolean
+          description: Only active keys are used to verify QR tokens.
+
+    StationConfig:
+      type: object
+      description: Java record `StationConfigDto`.
+      required: [stationId, factoryId, direction, enabled, turnstileId]
+      properties:
+        stationId:
+          type: string
+        factoryId:
+          type: string
+        direction:
+          type: string
+          enum: [IN, OUT]
+        enabled:
+          type: boolean
+        turnstileId:
+          type: string
+          example: TS-BD-IN-01
+
+    GateSettings:
+      type: object
+      description: Java record `GateSettingsDto`.
+      required: [offlineThresholdMinutes]
+      properties:
+        offlineThresholdMinutes:
+          type: integer
+          minimum: 1
+          description: 480 (8 h) by default, 2 in the `demo` profile.
+
+    Heartbeat:
+      type: object
+      required: [gateId, sentAt, outboxDepth, turnstileStatus]
+      properties:
+        gateId:
+          type: string
+        sentAt:
+          type: string
+          format: date-time
+        outboxDepth:
+          type: integer
+          format: int64
+          minimum: 0
+        lastSyncAt:
+          type: string
+          format: date-time
+        turnstileStatus:
+          type: object
+          description: Turnstile health per station id.
+          additionalProperties:
+            type: string
+            enum: [UP, DOWN, CIRCUIT_OPEN]
+
+    Problem:
+      type: object
+      required: [title, status, code]
+      properties:
+        type:
+          type: string
+          default: about:blank
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        code:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+            required: [field, message]
+            properties:
+              field:
+                type: string
+              message:
+                type: string

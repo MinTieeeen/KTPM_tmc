@@ -9,6 +9,7 @@
 ```
 tmc/docs/
 ├── spec/      README.md (tài liệu này) + một file SRS cho mỗi module: <module>.md
+├── api/       đặc tả REST API chuẩn OpenAPI 3.0.3 (tiếng Anh) – hợp đồng giữa frontend và backend, xem api/README.md
 ├── drawio/    class-diagram.drawio – mọi sơ đồ lớp, mỗi module một tab (tên tab = <module>)
 └── images/    class-diagram-<module>.png – ảnh xuất từ từng tab
 ```

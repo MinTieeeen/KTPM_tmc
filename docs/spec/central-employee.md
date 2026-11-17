@@ -1,6 +1,7 @@
 # SRS – `central/employee` (C2 Employee & QR Management)
 
 > Trạng thái: Draft · Người viết: BE-2 · Người duyệt: FE-2 (API), BE-1 (định dạng QR) · Ngày: 17/11/2026
+> Hợp đồng API: [../api/central.md](../api/central.md) (OpenAPI: [../api/central.openapi.yaml](../api/central.openapi.yaml))
 
 ## 1. Giới thiệu
 

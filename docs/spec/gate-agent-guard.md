@@ -1,6 +1,7 @@
 # SRS – `gate-agent/guard` (G5 Guard Console – rút gọn)
 
 > Trạng thái: Draft · Người viết: BE-1 · Người duyệt: FE-1 · Ngày: 17/11/2026
+> Hợp đồng API: [../api/gate-agent.md](../api/gate-agent.md) (OpenAPI: [../api/gate-agent.openapi.yaml](../api/gate-agent.openapi.yaml))
 
 ## 1. Giới thiệu
 

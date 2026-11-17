@@ -1,0 +1,630 @@
+openapi: 3.0.3
+info:
+  title: TMC Central API (user-facing)
+  version: 1.0.0
+  description: |
+    User-facing HTTP API of **Central** (Q2 Central Quantum), consumed by the web front-ends served
+    from the same origin (`portal.html`, `admin.html`). The gate-to-central synchronisation API is
+    specified separately in `sync.openapi.yaml`.
+
+    | Consumer | Endpoints | Role |
+    |---|---|---|
+    | Login form (Portal and Admin, FE-2) | `POST /auth/login`, `GET /auth/me` | public / any |
+    | Simulated Employee Portal (FE-2) | `GET /portal/qr-token` | `EMPLOYEE` |
+    | Admin – Employees tab (FE-2) | `GET /employees`, `POST /employees/{code}/qr/issue`, `POST /employees/{code}/qr/revoke` | `ADMIN` |
+    | Admin – Stations tab (FE-2) | `GET /stations` | `ADMIN` |
+
+    **Authentication:** `POST /auth/login` returns a JWT (RS256, valid 8 h, no refresh token). Every
+    other endpoint requires `Authorization: Bearer <accessToken>`.
+    - Missing, malformed, expired token, or account disabled after login → **401** `UNAUTHENTICATED`:
+      the client drops the token and shows the login form.
+    - Valid token but wrong role → **403** `FORBIDDEN`: the client shows *"You do not have access"*.
+    - Authorisation is always enforced by the server; hiding UI elements is only a convenience (DP-10).
+
+    **Conventions** (see `docs/api/README.md`): JSON UTF-8; timestamps ISO-8601 UTC (`Z`); `null`
+    fields omitted; errors are RFC 9457 Problem Details with a stable `code`.
+
+    Owner: BE-2 · Reviewer: FE-2 · Specification: `docs/spec/central-iam.md`,
+    `docs/spec/central-employee.md`, `docs/spec/central-station.md`.
+  contact:
+    name: TMC team (BE-2)
+servers:
+  - url: http://localhost:8080
+    description: Central (Docker Compose / local)
+  - url: http://localhost:5173
+    description: Vite dev server (proxies /auth/, /portal/, /employees, /stations to :8080)
+tags:
+  - name: auth
+    description: Login and session check (C7)
+  - name: portal
+    description: Dynamic QR code for the logged-in employee (C2)
+  - name: employees
+    description: Employee list and QR credential lifecycle (C2, admin)
+  - name: stations
+    description: Gate station status (C3, admin)
+security:
+  - bearerAuth: []
+
+paths:
+  /auth/login:
+    post:
+      tags: [auth]
+      operationId: login
+      summary: Log in and obtain an access token
+      description: |
+        Wrong username, wrong password and disabled account all return the **same** 401 response
+        (`INVALID_CREDENTIALS`), so the client shows one message: *"Wrong credentials or account locked"*.
+        The client must disable the submit button while the request is in flight.
+
+        The client stores `accessToken` in `sessionStorage` (cleared when the tab closes) and sends it
+        as `Authorization: Bearer …` on every later call. Logout is client-side only (drop the token).
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              employee:
+                value: { username: e0001, password: '<demo password>' }
+              admin:
+                value: { username: admin, password: '<demo password>' }
+      responses:
+        '200':
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+              examples:
+                employee:
+                  value:
+                    accessToken: eyJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJ0bWMtY2VudHJhbCIsInN1YiI6ImUwMDAxIn0.c2ln
+                    expiresAt: '2026-11-20T15:58:00Z'
+                    role: EMPLOYEE
+                    employeeCode: E0001
+                admin:
+                  value:
+                    accessToken: eyJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJ0bWMtY2VudHJhbCIsInN1YiI6ImFkbWluIn0.c2ln
+                    expiresAt: '2026-11-20T15:58:00Z'
+                    role: ADMIN
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          description: Wrong username/password or disabled account (`INVALID_CREDENTIALS`)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: about:blank
+                title: Unauthorized
+                status: 401
+                detail: Invalid credentials
+                code: INVALID_CREDENTIALS
+
+  /auth/me:
+    get:
+      tags: [auth]
+      operationId: getCurrentUser
+      summary: Current user (session check)
+      description: |
+        Called when a page loads with a stored token. 200 → continue; 401 → show the login form.
+        Portal requires `role == EMPLOYEE`, Admin requires `role == ADMIN`; otherwise the page shows
+        *"You do not have access"* (the server would return 403 anyway).
+      responses:
+        '200':
+          description: The authenticated user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentUser'
+              example:
+                username: e0001
+                role: EMPLOYEE
+                employeeCode: E0001
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+
+  /portal/qr-token:
+    get:
+      tags: [portal]
+      operationId: getQrToken
+      summary: Get a freshly signed dynamic QR token for the logged-in employee
+      description: |
+        The employee is taken from the JWT – there is **no parameter**, so an employee can only ever
+        obtain their own code (FR-03). Each call returns a **new** token (new nonce), valid for 60 s.
+
+        Portal behaviour:
+        - Render `raw` as a QR code (error-correction level M) and show a countdown to `expiresAt`.
+        - Fetch a new token every `refreshAfterSec` seconds (30) and whenever the tab becomes visible
+          again; the previous token stays valid until it expires.
+        - On **409** stop showing any QR code and show the message for the returned `code`
+          (e.g. `CREDENTIAL_REVOKED` → *"Your QR code has been revoked, please contact HR"*). Keep
+          polling every `30 s` so that a re-issued credential is picked up automatically.
+        - Offer a "Copy string" button that copies `raw` (used to paste into the kiosk without a camera).
+
+        Responses carry `Cache-Control: no-store`.
+      responses:
+        '200':
+          description: Signed token
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                example: no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QrTokenResponse'
+              example:
+                raw: TMC1.eyJ2IjoxLCJjaWQiOiI2ZjFjMmQ0YS04YjllLTRmMDEtYTJiMy1jNGQ1ZTZmNzA4MTIiLCJpYXQiOjE3NjM2MjU0ODAsImV4cCI6MTc2MzYyNTU0MCwibm9uY2UiOiJiR1Z6YzI5dVgyNXZibU5sIiwia2lkIjoiay1kZW1vIn0.kQ1x…
+                expiresAt: '2026-11-20T07:59:00Z'
+                refreshAfterSec: 30
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: |
+            No QR code can be issued for this employee. `code` is one of
+            `CREDENTIAL_REVOKED` (latest credential was revoked), `NO_ACTIVE_CREDENTIAL`
+            (never issued), `EMPLOYEE_INACTIVE` (employee no longer active).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: about:blank
+                title: Conflict
+                status: 409
+                detail: QR credential has been revoked
+                code: CREDENTIAL_REVOKED
+
+  /employees:
+    get:
+      tags: [employees]
+      operationId: listEmployees
+      summary: List employees with their QR credential status
+      description: |
+        Returns every matching employee (the demo has 20, so there is **no pagination**), sorted by
+        `code` ascending.
+
+        The department filter of the Admin screen is built from the distinct
+        `departmentId`/`departmentName` pairs of the **unfiltered** list – there is no separate
+        departments endpoint.
+      parameters:
+        - name: department
+          in: query
+          required: false
+          description: Exact department id (`departmentId`). Omit for all departments.
+          schema:
+            type: string
+            example: BD-ASM
+        - name: q
+          in: query
+          required: false
+          description: Case-insensitive substring of the employee code or full name.
+          schema:
+            type: string
+            maxLength: 100
+            example: nguyen
+      responses:
+        '200':
+          description: Matching employees (possibly empty)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EmployeeView'
+              example:
+                - code: E0001
+                  fullName: Nguyen Van An
+                  departmentId: BD-ASM
+                  departmentName: Assembly
+                  factoryId: BD
+                  active: true
+                  credentialId: 6f1c2d4a-8b9e-4f01-a2b3-c4d5e6f70812
+                  credentialStatus: ACTIVE
+                  issuedAt: '2026-11-16T01:00:00Z'
+                - code: E0020
+                  fullName: Tran Thi Binh
+                  departmentId: LA-PKG
+                  departmentName: Packaging
+                  factoryId: LA
+                  active: true
+                  credentialId: 0a9b8c7d-6e5f-4a3b-9c2d-1e0f2a3b4c5d
+                  credentialStatus: REVOKED
+                  issuedAt: '2026-11-16T01:00:00Z'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /employees/{code}/qr/issue:
+    post:
+      tags: [employees]
+      operationId: issueQrCredential
+      summary: Issue or re-issue the employee's QR credential
+      description: |
+        Creates a new `ACTIVE` credential. If one is already active it is revoked first (reason
+        `REISSUED`) in the same transaction, so the employee never has two active credentials (INV-01).
+        The change reaches every connected gate within 60 s. No request body.
+      parameters:
+        - $ref: '#/components/parameters/EmployeeCode'
+      responses:
+        '200':
+          description: Updated employee row
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/EmployeeNotFound'
+        '409':
+          description: '`EMPLOYEE_INACTIVE` (cannot issue to an inactive employee) or `CONCURRENT_UPDATE` (another admin changed it at the same time – reload and retry).'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+  /employees/{code}/qr/revoke:
+    post:
+      tags: [employees]
+      operationId: revokeQrCredential
+      summary: Revoke the employee's active QR credential
+      description: |
+        The Admin screen must ask for a reason and a confirmation before calling. After success:
+        the employee's Portal receives 409 `CREDENTIAL_REVOKED` on its next refresh, and every
+        connected gate rejects the employee within 60 s (NFR-SEC-06).
+      parameters:
+        - $ref: '#/components/parameters/EmployeeCode'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RevokeRequest'
+            example:
+              reason: Lost phone
+      responses:
+        '200':
+          description: Updated employee row (`credentialStatus` = `REVOKED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeView'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/EmployeeNotFound'
+        '409':
+          description: '`NO_ACTIVE_CREDENTIAL` – nothing to revoke.'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+  /stations:
+    get:
+      tags: [stations]
+      operationId: listStations
+      summary: Gate stations with connectivity and outbox status
+      description: |
+        Polled by the Admin "Stations" tab every **5 s**. One row per station sorted by `stationId`;
+        connectivity fields come from the latest heartbeat of the Gate Agent of the station's factory
+        (stations of the same factory therefore share `online`, `lastHeartbeatAt`, `outboxDepth`,
+        `lastSyncAt`). A gate is `online` when its last heartbeat was received at most 30 s ago.
+      responses:
+        '200':
+          description: All stations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StationView'
+              example:
+                - stationId: BD-IN-01
+                  factoryId: BD
+                  direction: IN
+                  enabled: true
+                  gateId: gate-bd
+                  online: false
+                  lastHeartbeatAt: '2026-11-20T07:41:10Z'
+                  outboxDepth: 37
+                  lastSyncAt: '2026-11-20T07:41:10Z'
+                  turnstileStatus: UP
+                - stationId: LA-IN-01
+                  factoryId: LA
+                  direction: IN
+                  enabled: true
+                  gateId: gate-la
+                  online: true
+                  lastHeartbeatAt: '2026-11-20T07:58:05Z'
+                  outboxDepth: 0
+                  lastSyncAt: '2026-11-20T07:58:05Z'
+                  turnstileStatus: UP
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        RS256 JWT issued by `POST /auth/login`. Claims: `iss=tmc-central`, `sub=<username>`,
+        `role` (`EMPLOYEE`|`ADMIN`), `employeeCode` (employees only), `iat`, `exp` (iat + 8 h), `jti`.
+        Clients must treat the token as opaque and use `expiresAt`/`GET /auth/me` instead of decoding it.
+
+  parameters:
+    EmployeeCode:
+      name: code
+      in: path
+      required: true
+      description: Employee code
+      schema:
+        type: string
+        pattern: '^E[0-9]{4}$'
+        example: E0012
+
+  responses:
+    ValidationError:
+      description: Invalid request (`VALIDATION_ERROR`)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: about:blank
+            title: Bad Request
+            status: 400
+            detail: Request validation failed
+            code: VALIDATION_ERROR
+            errors:
+              - field: reason
+                message: size must be between 3 and 200
+    Unauthenticated:
+      description: Missing, invalid or expired token, or account disabled (`UNAUTHENTICATED`)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: about:blank
+            title: Unauthorized
+            status: 401
+            code: UNAUTHENTICATED
+    Forbidden:
+      description: Authenticated but the role is not allowed (`FORBIDDEN`)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: about:blank
+            title: Forbidden
+            status: 403
+            code: FORBIDDEN
+    EmployeeNotFound:
+      description: No employee with this code (`EMPLOYEE_NOT_FOUND`)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: about:blank
+            title: Not Found
+            status: 404
+            detail: Employee E9999 not found
+            code: EMPLOYEE_NOT_FOUND
+
+  schemas:
+    Role:
+      type: string
+      enum: [EMPLOYEE, ADMIN]
+
+    LoginRequest:
+      type: object
+      required: [username, password]
+      additionalProperties: false
+      properties:
+        username:
+          type: string
+          minLength: 1
+          maxLength: 32
+          description: Case-insensitive; trimmed by the server.
+          example: e0001
+        password:
+          type: string
+          format: password
+          minLength: 1
+          maxLength: 128
+
+    LoginResponse:
+      type: object
+      required: [accessToken, expiresAt, role]
+      properties:
+        accessToken:
+          type: string
+          description: 'JWT to send as `Authorization: Bearer <accessToken>`.'
+        expiresAt:
+          type: string
+          format: date-time
+        role:
+          $ref: '#/components/schemas/Role'
+        employeeCode:
+          type: string
+          pattern: '^E[0-9]{4}$'
+          description: Present only when `role` is `EMPLOYEE`.
+
+    CurrentUser:
+      type: object
+      required: [username, role]
+      properties:
+        username:
+          type: string
+        role:
+          $ref: '#/components/schemas/Role'
+        employeeCode:
+          type: string
+          pattern: '^E[0-9]{4}$'
+          description: Present only when `role` is `EMPLOYEE`.
+
+    QrTokenResponse:
+      type: object
+      required: [raw, expiresAt, refreshAfterSec]
+      properties:
+        raw:
+          type: string
+          maxLength: 1024
+          description: |
+            The string to encode in the QR code: `TMC1.<base64url payload>.<base64url Ed25519 signature>`.
+            Treat as opaque; never log it. Typical length ≈ 250 characters.
+        expiresAt:
+          type: string
+          format: date-time
+          description: End of validity (issued-at + 60 s). Gates accept ±30 s clock skew.
+        refreshAfterSec:
+          type: integer
+          minimum: 1
+          example: 30
+          description: Seconds after which the client should fetch a new token.
+
+    CredentialStatus:
+      type: string
+      enum: [ACTIVE, REVOKED]
+
+    EmployeeView:
+      type: object
+      required: [code, fullName, departmentId, departmentName, factoryId, active]
+      properties:
+        code:
+          type: string
+          pattern: '^E[0-9]{4}$'
+        fullName:
+          type: string
+        departmentId:
+          type: string
+        departmentName:
+          type: string
+        factoryId:
+          type: string
+          enum: [BD, LA]
+        active:
+          type: boolean
+          description: False when the employee no longer works for the company.
+        credentialId:
+          type: string
+          format: uuid
+          description: Latest credential; omitted when none was ever issued.
+        credentialStatus:
+          allOf:
+            - $ref: '#/components/schemas/CredentialStatus'
+          description: Status of the latest credential; omitted when none was ever issued.
+        issuedAt:
+          type: string
+          format: date-time
+          description: Issue time of the latest credential.
+
+    RevokeRequest:
+      type: object
+      required: [reason]
+      additionalProperties: false
+      properties:
+        reason:
+          type: string
+          minLength: 3
+          maxLength: 200
+          description: Free text, trimmed by the server.
+
+    TurnstileHealth:
+      type: string
+      enum: [UP, DOWN, CIRCUIT_OPEN]
+
+    StationView:
+      type: object
+      required: [stationId, factoryId, direction, enabled, gateId, online]
+      properties:
+        stationId:
+          type: string
+          pattern: '^[A-Z]{2}-(IN|OUT)-[0-9]{2}$'
+        factoryId:
+          type: string
+          enum: [BD, LA]
+        direction:
+          type: string
+          enum: [IN, OUT]
+        enabled:
+          type: boolean
+        gateId:
+          type: string
+          example: gate-bd
+        online:
+          type: boolean
+        lastHeartbeatAt:
+          type: string
+          format: date-time
+          description: Omitted when no heartbeat was ever received.
+        outboxDepth:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Events waiting at the gate, from the latest heartbeat.
+        lastSyncAt:
+          type: string
+          format: date-time
+          description: Last successful sync reported by the gate.
+        turnstileStatus:
+          allOf:
+            - $ref: '#/components/schemas/TurnstileHealth'
+          description: Health of this station's turnstile, from the latest heartbeat.
+
+    Problem:
+      type: object
+      description: RFC 9457 Problem Details with the TMC `code` extension.
+      required: [title, status, code]
+      properties:
+        type:
+          type: string
+          default: about:blank
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+          description: Human-readable, English, may change – do not display verbatim to end users.
+        instance:
+          type: string
+        code:
+          type: string
+          description: Stable machine-readable error code (README § Error codes).
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldError'
+    FieldError:
+      type: object
+      required: [field, message]
+      properties:
+        field:
+          type: string
+        message:
+          type: string

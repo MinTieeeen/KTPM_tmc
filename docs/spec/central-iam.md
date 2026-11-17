@@ -1,6 +1,7 @@
 # SRS – `central/iam` (C7 IAM / RBAC – tối thiểu)
 
 > Trạng thái: Draft · Người viết: BE-2 · Người duyệt: FE-2 · Ngày: 17/11/2026
+> Hợp đồng API: [../api/central.md](../api/central.md) (OpenAPI: [../api/central.openapi.yaml](../api/central.openapi.yaml))
 
 ## 1. Giới thiệu
 
@@ -65,7 +66,7 @@ Nhân viên (Portal), quản trị viên (Admin), Gate Agent (API key), các mod
 | POST | `/auth/login` | công khai | `{ "username": "e0001", "password": "…" }` | `200 { "accessToken": "eyJ…", "expiresAt": "…", "role": "EMPLOYEE", "employeeCode": "E0001" }` / `401` |
 | GET | `/auth/me` | JWT | — | `200 { "username": "e0001", "role": "EMPLOYEE", "employeeCode": "E0001" }` |
 
-Mật khẩu demo chung ghi trong README của repo.
+Mật khẩu demo chung ghi trong [../api/README.md](../api/README.md) § 3.1.
 
 ### 5.2. Ma trận quyền (cấu hình trong `SecurityConfig` và `@PreAuthorize`)
 | Đường dẫn | Công khai | EMPLOYEE | ADMIN | Gate (`X-Gate-Key`) |

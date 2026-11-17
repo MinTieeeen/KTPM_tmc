@@ -27,7 +27,7 @@ Mã nguồn Milestone 2 của bài tập lớn Kiến trúc phần mềm (CO3017
 
 C4, C5, C6, C8, C9 (chốt kỳ, HR/Payroll, báo cáo, audit, cấu hình) có trong báo cáo nhưng **không thuộc phạm vi MVP**.
 
-Tài khoản demo (seed): nhân viên `e0001` … `e0020`, quản trị `admin`; mật khẩu do migration seed quy định (xem `docs/spec/central-iam.md`).
+Tài khoản demo (seed): nhân viên `e0001` … `e0020`, quản trị `admin`; mật khẩu do migration seed quy định (xem `docs/api/README.md` § 3.1).
 
 Bên trong mỗi package có 4 tầng `api / application / domain / infrastructure`. `domain` là Java thuần, không phụ thuộc Spring hay `infrastructure` (kiểm tra bằng ArchUnit và Spring Modulith trong CI).
 
@@ -40,7 +40,7 @@ tmc/
 ├── gate-agent/              Q1 – G1..G4, G5 rút gọn
 ├── central/                 Q2 – C1..C3, C7
 ├── simulators/              turnstile-sim
-├── docs/                    phân công, quy trình; spec/ (SRS), drawio/class-diagram.drawio + images/ (sơ đồ lớp)
+├── docs/                    phân công, quy trình; spec/ (SRS), api/ (OpenAPI), drawio/ + images/ (sơ đồ lớp)
 ├── web/                     React + TypeScript + Vite (hai build target: gate, central)
 ├── deploy/                  docker-compose.yml, Dockerfile, env, script demo
 ├── tests/                   e2e (T1–T11), load (k6)
