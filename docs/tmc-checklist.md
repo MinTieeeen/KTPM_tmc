@@ -1,6 +1,6 @@
 # TMC – Bảng phân công
 
-> Quy trình làm việc: [workflow.md](workflow.md). Đặc tả (SRS) của từng module nằm trong [spec/](spec/README.md); đặc tả API (OpenAPI 3.0.3) trong [api/](api/README.md); sơ đồ lớp ở [drawio/class-diagram.drawio](drawio/class-diagram.drawio) (mỗi module một tab) và [images/](images/) (ảnh).
+> Quy trình làm việc: [workflow.md](workflow.md). Đặc tả (SRS) của từng module nằm trong [spec/](spec/README.md); đặc tả API trong [api/](api/README.md); sitemap và màn hình web trong [web/sitemap.md](web/sitemap.md); sơ đồ lớp ở [drawio/class-diagram.drawio](drawio/class-diagram.drawio) (mỗi module một tab) và [images/](images/) (ảnh).
 
 | Vai trò | Họ và tên | MSSV | Phạm vi | Tài liệu liên quan |
 |---|---|---|---|---|
