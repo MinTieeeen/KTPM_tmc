@@ -11,7 +11,7 @@ spring:
 
 tmc:
   sim:
-    turnstile-ids: ${TURNSTILE_IDS:BD-IN-01,BD-OUT-01}
+    turnstile-ids: ${TURNSTILE_IDS:TS-BD-IN-01,TS-BD-OUT-01}
     # Hành vi ban đầu; đổi khi đang chạy bằng PUT /admin/behavior
     latency-min: ${SIM_LATENCY_MIN:300ms}
     latency-max: ${SIM_LATENCY_MAX:500ms}

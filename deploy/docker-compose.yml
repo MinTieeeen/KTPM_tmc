@@ -71,7 +71,7 @@ services:
       args: { MODULE: turnstile-sim }
     image: tmc/turnstile-sim:dev
     environment:
-      TURNSTILE_IDS: BD-IN-01,BD-OUT-01
+      TURNSTILE_IDS: TS-BD-IN-01,TS-BD-OUT-01
     ports: ["9001:9001"]
     networks: [lan-bd]
 
@@ -81,7 +81,7 @@ services:
       args: { MODULE: turnstile-sim }
     image: tmc/turnstile-sim:dev
     environment:
-      TURNSTILE_IDS: LA-IN-01,LA-OUT-01
+      TURNSTILE_IDS: TS-LA-IN-01,TS-LA-OUT-01
     ports: ["9002:9001"]
     networks: [lan-la]
 
