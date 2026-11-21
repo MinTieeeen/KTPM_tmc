@@ -27,6 +27,9 @@ spring:
     serialization:
       write-dates-as-timestamps: false
     default-property-inclusion: non_null
+    deserialization:
+      # EventType lạ trong /sync/events → null → sự kiện đó vào "rejected" (UNKNOWN_EVENT_TYPE), không hỏng cả lô
+      read-unknown-enum-values-as-null: true
   modulith:
     events:
       # Event publication registry: lưu sự kiện QrCredentialChanged, StationConfigChanged, SigningKeyPublished
