@@ -4,10 +4,14 @@ server:
 spring:
   application:
     name: turnstile-sim
+  threads:
+    virtual:
+      enabled: true          # NFR-01: sleep không chiếm luồng nền tảng khi tải đồng thời (k6 T9)
   jackson:
     time-zone: UTC
     serialization:
       write-dates-as-timestamps: false
+    default-property-inclusion: non_null
 
 tmc:
   sim:
@@ -17,6 +21,7 @@ tmc:
     latency-max: ${SIM_LATENCY_MAX:500ms}
     failure-rate: ${SIM_FAILURE_RATE:0.0}
     mode: ${SIM_MODE:NORMAL}   # NORMAL | TIMEOUT | ERROR | EXECUTE_THEN_TIMEOUT
+    timeout-delay: ${SIM_TIMEOUT_DELAY:5s}
 
 management:
   endpoints:
