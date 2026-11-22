@@ -1,0 +1,122 @@
+.page {
+  min-height: 100vh;
+  background: var(--c-bg);
+}
+
+.appBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  background: var(--c-primary);
+  color: #fff;
+}
+
+.appTitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.logout {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  max-width: 420px;
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-4);
+  text-align: center;
+}
+
+.employee {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.account {
+  margin: 0;
+  font-size: 12px;
+  color: var(--c-muted);
+}
+
+.qrBox {
+  padding: var(--space-2);
+  background: #fff;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  line-height: 0;
+}
+
+.countdown {
+  width: 100%;
+}
+
+.bar {
+  height: 8px;
+  overflow: hidden;
+  background: #e5e7eb;
+  border-radius: 999px;
+}
+
+.barFill {
+  height: 100%;
+  background: var(--c-primary);
+  transition: width 1s linear;
+}
+
+.barFillLow {
+  background: var(--c-warning);
+}
+
+.countdownText {
+  margin: var(--space-2) 0 0;
+  font-size: 14px;
+}
+
+.hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--c-muted);
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+.noQrIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  margin: var(--space-3) 0;
+  font-size: 32px;
+  background: var(--c-danger-soft);
+  border-radius: 50%;
+}
+
+.noQrHeading {
+  margin: 0;
+  font-size: 20px;
+  color: var(--c-danger);
+}
+
+.noQrHint {
+  margin: 0;
+  font-size: 14px;
+}
+
+.infoBox {
+  width: 100%;
+  padding: var(--space-3);
+  background: #e5e7eb;
+  border-radius: var(--radius);
+  font-size: 13px;
+}
