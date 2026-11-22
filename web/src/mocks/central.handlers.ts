@@ -20,6 +20,8 @@ export interface MockBackend {
   /** Thời hạn mã QR và chu kỳ làm mới (giây); test đặt nhỏ để không phải chờ. */
   qrTtlSec: number;
   qrRefreshAfterSec: number;
+  /** Đồng hồ máy chủ nhanh hơn trình duyệt bao nhiêu ms (âm = chậm hơn); ảnh hưởng expiresAt và header Date. */
+  clockSkewMs: number;
 }
 
 export function createMockBackend(): MockBackend {
@@ -30,6 +32,7 @@ export function createMockBackend(): MockBackend {
     delayMs: 0,
     qrTtlSec: 60,
     qrRefreshAfterSec: 30,
+    clockSkewMs: 0,
   };
 }
 
@@ -111,10 +114,15 @@ export function createCentralHandlers(backend: MockBackend) {
       return HttpResponse.json(
         {
           raw: `TMC1.mock-${employee.code}-${nonce}.signature`,
-          expiresAt: new Date(Date.now() + backend.qrTtlSec * 1000).toISOString(),
+          expiresAt: new Date(Date.now() + backend.clockSkewMs + backend.qrTtlSec * 1000).toISOString(),
           refreshAfterSec: backend.qrRefreshAfterSec,
         },
-        { headers: { 'Cache-Control': 'no-store' } },
+        {
+          headers: {
+            'Cache-Control': 'no-store',
+            Date: new Date(Date.now() + backend.clockSkewMs).toUTCString(),
+          },
+        },
       );
     }),
 

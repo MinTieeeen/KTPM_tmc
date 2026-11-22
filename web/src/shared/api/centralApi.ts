@@ -18,7 +18,19 @@ interface RequestOptions {
   auth?: boolean;
 }
 
+/** Mã QR kèm độ lệch đồng hồ: (giờ máy chủ − giờ thiết bị) lúc nhận phản hồi, tính từ header Date (độ phân giải 1 s). */
+export interface QrToken extends QrTokenResponse {
+  clockOffsetMs: number;
+}
+
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  return (await requestWithClock<T>(path, options)).data;
+}
+
+async function requestWithClock<T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<{ data: T; clockOffsetMs: number }> {
   const { method = 'GET', body, auth = true } = options;
   const headers: Record<string, string> = { Accept: 'application/json' };
   if (body !== undefined) headers['Content-Type'] = 'application/json';
@@ -36,13 +48,17 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   } catch {
     throw networkError();
   }
+  const receivedAtMs = Date.now();
 
   if (!res.ok) {
     if (res.status === 401 && auth) authSession.onUnauthorized();
     if (res.status === 403 && auth) authSession.onForbidden();
     throw await toApiError(res);
   }
-  return (await res.json()) as T;
+  const serverMs = Date.parse(res.headers.get('Date') ?? '');
+  // Date bị cắt xuống giây: lấy cận trên (+999 ms) để đếm ngược chỉ thấp hơn thực tế tối đa 1 s, không bao giờ cao hơn.
+  const clockOffsetMs = Number.isFinite(serverMs) ? serverMs + 999 - receivedAtMs : 0;
+  return { data: (await res.json()) as T, clockOffsetMs };
 }
 
 export const centralApi = {
@@ -51,7 +67,10 @@ export const centralApi = {
 
   me: () => request<CurrentUser>('/auth/me'),
 
-  getQrToken: () => request<QrTokenResponse>('/portal/qr-token'),
+  getQrToken: async (): Promise<QrToken> => {
+    const { data, clockOffsetMs } = await requestWithClock<QrTokenResponse>('/portal/qr-token');
+    return { ...data, clockOffsetMs };
+  },
 
   listEmployees: (department?: string, q?: string) => {
     const params = new URLSearchParams();
