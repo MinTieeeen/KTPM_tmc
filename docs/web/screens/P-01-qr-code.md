@@ -34,7 +34,7 @@ Hiển thị mã QR động của chính nhân viên đang đăng nhập; mã t�
 | Trạng thái | Nội dung chính |
 |---|---|
 | Đang tải | Lần lấy mã đầu tiên. |
-| Hiển thị mã | QR mức sửa lỗi M, hai đồng hồ (đổi mã và hết hạn), mã nhân viên. |
+| Hiển thị mã | QR mức sửa lỗi M, đồng hồ "Mã mới sau N giây", mã nhân viên; hạn của mã chỉ hiện khi sắp hết hoặc không làm mới được. |
 | Đang làm mới | Giữ mã cũ cho tới khi có mã mới. |
 | Mất mạng | Giữ mã hiện tại tới `expiresAt`, sau đó "Không lấy được mã QR, kiểm tra kết nối". |
 
@@ -66,8 +66,8 @@ Nguồn: [wireframes.drawio](../../drawio/wireframes.drawio), tab `P-01 Mã QR c
 | 2 | Nút Đăng xuất | Button secondary | – | Góc phải thanh tiêu đề. |
 | 3 | Thông tin nhân viên | Text | `GET /auth/me`: `employeeCode`, `username` | "Nhân viên {employeeCode}" 18 px đậm; dòng dưới "tài khoản {username}" 12 px xám. API không trả họ tên. |
 | 4 | Mã QR | QR image | `GET /portal/qr-token` → `raw` | 200×200 px, mức sửa lỗi M, viền trắng 8 px, căn giữa; luôn là mã mới nhất. |
-| 5 | Đếm ngược | Progress bar + 2 dòng text | Lúc nhận mã + `refreshAfterSec` (đổi mã); `expiresAt` (hết hạn) so với giờ hiện tại | **Đồng hồ chính** "Mã mới sau {n} giây" (n ≤ `refreshAfterSec`) kèm thanh co dần theo chu kỳ đổi mã; khi n = 0 mà chưa có mã mới: "Đang lấy mã mới…". **Dòng phụ** "Hết hạn sau {m} giây (lúc HH:mm:ss)" (m ≤ 60, khớp `expiresAt`), chuyển cam khi ≤ 10 s (chỉ xảy ra khi không làm mới được). Cả hai cập nhật mỗi giây. |
-| 6 | Ghi chú giải thích | Text | `refreshAfterSec` | 12 px xám: "Mã tự đổi mỗi {refreshAfterSec} giây. Mã cũ vẫn quét được đến khi hết hạn, nhưng mỗi mã chỉ dùng được một lần." |
+| 5 | Đếm ngược | Progress bar + text | Lúc nhận mã + `refreshAfterSec` (đổi mã); `expiresAt` (hạn) so với giờ hiện tại | **Đồng hồ chính** "Mã mới sau {n} giây" (n ≤ `refreshAfterSec`) kèm thanh co dần theo chu kỳ đổi mã; khi n = 0 mà chưa có mã mới: "Đang lấy mã mới…". **Dòng phụ** "Hết hạn sau {m} giây (lúc HH:mm:ss)" (m khớp `expiresAt`, ≤ 60) **chỉ hiện** khi m ≤ 10 hoặc lần làm mới gần nhất lỗi (hiện [8]); m ≤ 10 thì chữ cam. Bình thường dòng này ẩn để người dùng không thấy hai con số khác nhau (30 s và 60 s). Cả hai cập nhật mỗi giây. |
+| 6 | Ghi chú | Text | `refreshAfterSec` | 12 px xám: "Mã tự đổi mỗi {refreshAfterSec} giây và chỉ dùng được một lần." |
 | 7 | Nút Sao chép chuỗi | Button secondary | `raw` | Icon sao chép (Copy) + "Sao chép chuỗi"; dùng khi kiosk không có camera. |
 | 8 | Cảnh báo mất mạng | Alert cảnh báo | Lỗi khi làm mới | Hộp cam: "Không lấy được mã QR mới – kiểm tra kết nối". |
 | 9 | Thông báo đã sao chép | Toast | Kết quả sao chép | Viên thuốc xám đậm "Đã sao chép", tự ẩn sau 2 s. |
@@ -86,7 +86,7 @@ Nguồn: [wireframes.drawio](../../drawio/wireframes.drawio), tab `P-01 Mã QR c
 
 ## 8. Tiêu chí chấp nhận
 
-- [ ] QR đổi sau mỗi 30 s và mỗi lần mở lại tab; "Mã mới sau" không vượt 30 s và "Hết hạn sau" luôn khớp `expiresAt`, không vượt 60 s (D1).
+- [ ] QR đổi sau mỗi 30 s và mỗi lần mở lại tab; "Mã mới sau" không vượt 30 s; bình thường không có dòng "Hết hạn sau". Khi không làm mới được (ngắt mạng) hoặc mã còn ≤ 10 s thì hiện "Hết hạn sau {m} giây" với m khớp `expiresAt` và ≤ 60 (D1).
 - [ ] Mã do P-01 hiển thị được kiosk chấp nhận; quét lại cùng mã → K-02 "Mã QR đã được sử dụng" (D2).
 - [ ] Ngắt mạng điện thoại → [8] xuất hiện, QR biến mất khi hết hạn.
 - [ ] Thu hồi mã ở Admin → trong lần làm mới kế tiếp chuyển P-02 (D3).

@@ -34,31 +34,49 @@ describe('P-01 Mã QR cá nhân', () => {
     expect(screen.getByText('tài khoản e0001')).toBeTruthy();
     await waitFor(() => expect(hasQr(container)).toBe(true));
     expect(screen.getByText(/Mã mới sau \d+ giây/)).toBeTruthy();
-    expect(screen.getByText(/Hết hạn sau \d+ giây \(lúc \d{2}:\d{2}:\d{2}\)/)).toBeTruthy();
-    expect(screen.getByText(/Mã tự đổi mỗi 30 giây\. Mã cũ vẫn quét được đến khi hết hạn/)).toBeTruthy();
+    expect(screen.getByText('Mã tự đổi mỗi 30 giây và chỉ dùng được một lần.')).toBeTruthy();
+    // Khi mọi thứ bình thường không hiện hạn 60 s: tránh mâu thuẫn với chu kỳ đổi mã 30 s.
+    expect(screen.queryByText(/Hết hạn sau/)).toBeNull();
   });
 
-  it('hai đồng hồ không vượt thời hạn thật: đổi mã ≤ 30 giây, hết hạn ≤ 60 giây', async () => {
+  it('đồng hồ chính không vượt chu kỳ đổi mã (30 giây)', async () => {
     loginAs('e0001');
     renderApp(<PortalApp />);
-    const seconds = async (pattern: RegExp) =>
-      Number(/(\d+)/.exec((await screen.findByText(pattern)).textContent!)![1]);
-    expect(await seconds(/Mã mới sau \d+ giây/)).toBeLessThanOrEqual(30);
-    expect(await seconds(/Hết hạn sau \d+ giây/)).toBeLessThanOrEqual(60);
+    const text = (await screen.findByText(/Mã mới sau \d+ giây/)).textContent!;
+    expect(Number(/(\d+)/.exec(text)![1])).toBeLessThanOrEqual(30);
+  });
+
+  it('làm mới lỗi khi mã còn dài hạn: mới hiện "Hết hạn sau" để biết mã hiện tại dùng được bao lâu', async () => {
+    mock.backend.qrRefreshAfterSec = 1;
+    loginAs('e0001');
+    const { container } = renderApp(<PortalApp />);
+    await waitFor(() => expect(hasQr(container)).toBe(true));
+    expect(screen.queryByText(/Hết hạn sau/)).toBeNull();
+
+    mock.server.use(http.get('/portal/qr-token', () => HttpResponse.error()));
+    await screen.findByText('Không lấy được mã QR mới – kiểm tra kết nối', undefined, { timeout: 4000 });
+    const text = (await screen.findByText(/Hết hạn sau \d+ giây/)).textContent!;
+    const seconds = Number(/(\d+)/.exec(text)![1]);
+    expect(seconds).toBeGreaterThan(50);
+    expect(seconds).toBeLessThanOrEqual(60);
   });
 
   it.each([
     ['nhanh hơn thiết bị 5 giây', 5_000],
     ['chậm hơn thiết bị 20 giây', -20_000],
-  ])('đồng hồ máy chủ %s: "Hết hạn sau" vẫn đúng 58–60 giây nhờ hiệu chỉnh theo header Date', async (_name, skew) => {
-    mock.backend.clockSkewMs = skew;
-    loginAs('e0001');
-    renderApp(<PortalApp />);
-    const text = (await screen.findByText(/Hết hạn sau \d+ giây/)).textContent!;
-    const seconds = Number(/(\d+)/.exec(text)![1]);
-    expect(seconds).toBeGreaterThanOrEqual(58);
-    expect(seconds).toBeLessThanOrEqual(60);
-  });
+  ])(
+    'đồng hồ máy chủ %s: hạn hiển thị vẫn đúng (6–8 giây với mã sống 8 giây) nhờ hiệu chỉnh theo header Date',
+    async (_name, skew) => {
+      mock.backend.qrTtlSec = 8; // ≤ 10 s nên dòng "Hết hạn sau" hiện ngay
+      mock.backend.clockSkewMs = skew;
+      loginAs('e0001');
+      renderApp(<PortalApp />);
+      const text = (await screen.findByText(/Hết hạn sau \d+ giây/)).textContent!;
+      const seconds = Number(/(\d+)/.exec(text)![1]);
+      expect(seconds).toBeGreaterThanOrEqual(6);
+      expect(seconds).toBeLessThanOrEqual(8);
+    },
+  );
 
   it('mã đổi sau mỗi chu kỳ làm mới', async () => {
     mock.backend.qrTtlSec = 10;

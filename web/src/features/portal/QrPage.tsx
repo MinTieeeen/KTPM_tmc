@@ -57,11 +57,9 @@ export function QrPage({ user, token, receivedAtMs, refreshFailed, refreshing = 
             refreshAfterSec={visibleToken.refreshAfterSec}
             nowMs={nowMs}
             refreshing={refreshing}
+            refreshFailed={refreshFailed}
           />
-          <p className={styles.caption}>
-            Mã tự đổi mỗi {visibleToken.refreshAfterSec} giây. Mã cũ vẫn quét được đến khi hết hạn, nhưng mỗi mã chỉ
-            dùng được một lần.
-          </p>
+          <p className={styles.caption}>Mã tự đổi mỗi {visibleToken.refreshAfterSec} giây và chỉ dùng được một lần.</p>
           <Button variant="secondary" icon={Copy} onClick={onCopy}>
             Sao chép chuỗi
           </Button>

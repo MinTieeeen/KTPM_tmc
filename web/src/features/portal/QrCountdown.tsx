@@ -1,4 +1,4 @@
-// Hai đồng hồ riêng: "Mã mới sau N giây" (tới lần đổi mã) và "Hết hạn sau M giây" (tới expiresAt, cam khi ≤ 10 s).
+// Đồng hồ chính "Mã mới sau N giây"; dòng "Hết hạn sau M giây" chỉ hiện khi sắp hết hạn (≤ 10 s) hoặc không làm mới được.
 import { RefreshCw, Timer } from 'lucide-react';
 import { formatTime } from '@/features/common/format';
 import styles from './Portal.module.css';
@@ -12,9 +12,11 @@ interface Props {
   nowMs: number;
   /** Đang gọi lấy mã mới (icon quay, chữ "Đang lấy mã mới…"). */
   refreshing: boolean;
+  /** Lần làm mới gần nhất lỗi: lúc này hạn của mã hiện tại mới là điều người dùng cần biết. */
+  refreshFailed: boolean;
 }
 
-export function QrCountdown({ expiresAtMs, receivedAtMs, refreshAfterSec, nowMs, refreshing }: Props) {
+export function QrCountdown({ expiresAtMs, receivedAtMs, refreshAfterSec, nowMs, refreshing, refreshFailed }: Props) {
   const refreshMs = Math.max(1, refreshAfterSec * 1000);
   const untilRefreshMs = Math.max(0, receivedAtMs + refreshMs - nowMs);
   const refreshSeconds = Math.ceil(untilRefreshMs / 1000);
@@ -38,12 +40,14 @@ export function QrCountdown({ expiresAtMs, receivedAtMs, refreshAfterSec, nowMs,
       >
         <div className={styles.barFill} style={{ width: `${percent}%` }} />
       </div>
-      <p className={`${styles.expiry} ${expiryLow ? styles.expiryLow : ''}`}>
-        <Timer size={14} aria-hidden="true" />
-        <span>
-          Hết hạn sau {expiresSeconds} giây (lúc {formatTime(expiresAtMs)})
-        </span>
-      </p>
+      {(refreshFailed || expiryLow) && (
+        <p className={`${styles.expiry} ${expiryLow ? styles.expiryLow : ''}`}>
+          <Timer size={14} aria-hidden="true" />
+          <span>
+            Hết hạn sau {expiresSeconds} giây (lúc {formatTime(expiresAtMs)})
+          </span>
+        </p>
+      )}
     </div>
   );
 }
