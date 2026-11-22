@@ -1,6 +1,6 @@
-// A-02 Tab Nhân viên – docs/web/screens/A-02-employees-tab.md (tìm kiếm debounce 300 ms, lọc bộ phận).
+// A-02 Tab Nhân viên – docs/web/screens/A-02-employees-tab.md (tìm kiếm debounce 300 ms, lọc bộ phận, chọn nhiều dòng).
 import { ChevronDown, RefreshCw, Search, SearchX, X } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { EmployeeView } from '@/shared/api/centralApi';
 import { Alert } from '@/features/common/Alert';
 import { Button } from '@/features/common/Button';
@@ -11,6 +11,8 @@ import styles from './Admin.module.css';
 import { EmployeeRow } from './EmployeeRow';
 import type { QrAction } from './EmployeeRow';
 import { QrActionDialog } from './QrActionDialog';
+import { SelectionBar } from './SelectionBar';
+import { useEmployeeSelection } from './useEmployeeSelection';
 import { useEmployees } from './useEmployees';
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -22,6 +24,24 @@ interface DialogTarget {
 }
 
 const HEADERS = ['Mã', 'Họ tên', 'Bộ phận', 'Nhà máy', 'Nhân viên', 'Mã QR', 'Ngày cấp', 'Thao tác'];
+
+/** Ô "chọn tất cả" ở đầu bảng: có trạng thái nửa chọn khi mới chọn một phần các dòng đang hiển thị. */
+function SelectAllCheckbox({ checked, indeterminate, onChange }: { checked: boolean; indeterminate: boolean; onChange: () => void }) {
+  const ref = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (ref.current) ref.current.indeterminate = indeterminate;
+  }, [indeterminate]);
+  return (
+    <input
+      ref={ref}
+      type="checkbox"
+      className={styles.checkbox}
+      checked={checked}
+      aria-label="Chọn tất cả nhân viên đang hiển thị"
+      onChange={onChange}
+    />
+  );
+}
 
 export function EmployeesTab() {
   const [search, setSearch] = useState('');
@@ -40,6 +60,18 @@ export function EmployeesTab() {
   }, [unfiltered.data]);
 
   const employees = filtered.data;
+  const visibleCodes = useMemo(() => employees?.map((e) => e.code) ?? [], [employees]);
+  const selection = useEmployeeSelection(visibleCodes);
+
+  // Người đang chọn lấy từ danh sách chưa lọc để vẫn thấy được khi bộ lọc đang ẩn họ.
+  const selectedEmployees = useMemo(
+    () => (unfiltered.data ?? []).filter((e) => selection.selected.has(e.code)),
+    [unfiltered.data, selection.selected],
+  );
+  const visibleSet = useMemo(() => new Set(visibleCodes), [visibleCodes]);
+  const selectedVisible = visibleCodes.filter((c) => selection.selected.has(c)).length;
+  const hiddenCount = selectedEmployees.filter((e) => !visibleSet.has(e.code)).length;
+  const allVisibleSelected = visibleCodes.length > 0 && selectedVisible === visibleCodes.length;
 
   return (
     <section aria-label="Nhân viên">
@@ -80,6 +112,15 @@ export function EmployeesTab() {
         {employees && <span className={styles.count}>{employees.length} nhân viên</span>}
       </div>
 
+      <SelectionBar
+        employees={selectedEmployees}
+        hiddenCount={hiddenCount}
+        unselectedVisibleCount={visibleCodes.length - selectedVisible}
+        onRemove={selection.remove}
+        onSelectAllVisible={() => selection.selectMany(visibleCodes)}
+        onClear={selection.clear}
+      />
+
       {filtered.isError && !employees ? (
         <div className={styles.errorBox}>
           <Alert kind="error">Không tải được danh sách nhân viên.</Alert>
@@ -92,6 +133,7 @@ export function EmployeesTab() {
           <table className={styles.table}>
             <thead>
               <tr>
+                <th className={styles.selectCell} />
                 {HEADERS.map((h) => (
                   <th key={h}>{h}</th>
                 ))}
@@ -100,6 +142,9 @@ export function EmployeesTab() {
             <tbody>
               {Array.from({ length: SKELETON_ROWS }, (_, i) => (
                 <tr key={i}>
+                  <td className={styles.selectCell}>
+                    <Skeleton width={17} height={17} />
+                  </td>
                   {HEADERS.map((h) => (
                     <td key={h}>
                       <Skeleton width={h === 'Họ tên' ? 120 : 64} />
@@ -117,6 +162,13 @@ export function EmployeesTab() {
           <table className={styles.table}>
             <thead>
               <tr>
+                <th className={styles.selectCell}>
+                  <SelectAllCheckbox
+                    checked={allVisibleSelected}
+                    indeterminate={selectedVisible > 0 && !allVisibleSelected}
+                    onChange={selection.toggleAllVisible}
+                  />
+                </th>
                 {HEADERS.map((h) => (
                   <th key={h}>{h}</th>
                 ))}
@@ -124,7 +176,13 @@ export function EmployeesTab() {
             </thead>
             <tbody>
               {employees.map((e) => (
-                <EmployeeRow key={e.code} employee={e} onAction={(action, employee) => setDialog({ action, employee })} />
+                <EmployeeRow
+                  key={e.code}
+                  employee={e}
+                  selected={selection.selected.has(e.code)}
+                  onSelect={selection.toggle}
+                  onAction={(action, employee) => setDialog({ action, employee })}
+                />
               ))}
             </tbody>
           </table>

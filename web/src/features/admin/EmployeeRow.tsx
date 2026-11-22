@@ -1,4 +1,4 @@
-// Một dòng của bảng A-02: badge trạng thái nhân viên/QR và nút Thu hồi / Cấp lại theo luật của đặc tả.
+// Một dòng của bảng A-02: ô chọn, badge trạng thái nhân viên/QR và nút Thu hồi / Cấp lại theo luật của đặc tả.
 import { RefreshCw, ShieldOff } from 'lucide-react';
 import type { EmployeeView } from '@/shared/api/centralApi';
 import { Badge } from '@/features/common/Badge';
@@ -10,6 +10,9 @@ export type QrAction = 'revoke' | 'issue';
 
 interface Props {
   employee: EmployeeView;
+  selected: boolean;
+  /** `shiftKey` = đang giữ Shift khi bấm (chọn cả dải). */
+  onSelect: (code: string, shiftKey: boolean) => void;
   onAction: (action: QrAction, employee: EmployeeView) => void;
 }
 
@@ -19,9 +22,20 @@ function CredentialBadge({ status }: { status: EmployeeView['credentialStatus'] 
   return <Badge color="gray">Chưa cấp</Badge>;
 }
 
-export function EmployeeRow({ employee, onAction }: Props) {
+export function EmployeeRow({ employee, selected, onSelect, onAction }: Props) {
   return (
-    <tr>
+    <tr className={selected ? styles.rowSelected : undefined}>
+      <td className={styles.selectCell}>
+        <input
+          type="checkbox"
+          className={styles.checkbox}
+          checked={selected}
+          aria-label={`Chọn ${employee.code}`}
+          // onClick (không phải onChange) để đọc được phím Shift.
+          onClick={(e) => onSelect(employee.code, e.shiftKey)}
+          onChange={() => undefined}
+        />
+      </td>
       <td className={styles.code}>{employee.code}</td>
       <td>{employee.fullName}</td>
       <td>{employee.departmentName}</td>

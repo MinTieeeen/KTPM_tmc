@@ -48,6 +48,9 @@ Xem nhân viên và trạng thái QR credential; khởi động thao tác thu h�
 - Tìm kiếm debounce 300 ms (`q`), lọc theo `department`.
 - Nút **Thu hồi** khi `credentialStatus = ACTIVE`; **Cấp lại** khi nhân viên `active`.
 - Sau A-03 thành công, thay dòng bằng `EmployeeView` trả về.
+- Chọn nhiều dòng: ô chọn ở từng dòng và ô chọn tất cả ở đầu bảng (nửa chọn khi mới chọn một phần). Giữ **Shift** khi bấm để chọn/bỏ chọn cả dải liền nhau.
+- Lựa chọn lưu theo mã nhân viên nên **giữ nguyên khi tìm kiếm / lọc bộ phận**; người đang bị lọc ẩn vẫn hiện trong khung "Đã chọn" và được báo riêng. Lựa chọn mất khi rời tab hoặc tải lại trang.
+- Thao tác Thu hồi / Cấp lại ở từng dòng không làm mất lựa chọn; thống kê trong khung cập nhật theo dữ liệu mới.
 
 ## 7. Thiết kế màn hình
 
@@ -69,6 +72,9 @@ Nguồn: [wireframes.drawio](../../drawio/wireframes.drawio), tab `A-02 Tab Nhâ
 | 6 | Nút thao tác theo dòng | Button danger / secondary | `credentialStatus`, `active` | "Thu hồi" (đỏ) khi `credentialStatus = ACTIVE`; "Cấp lại" (viền xanh) khi `active = true`. |
 | 7 | Trạng thái rỗng | Empty state | Danh sách rỗng | Hộp xám dưới tiêu đề bảng: "Không có nhân viên nào khớp bộ lọc". |
 | 8 | Lỗi tải | Alert lỗi + button | Lỗi `GET /employees` | Hộp đỏ "Không tải được danh sách nhân viên." và nút "Thử lại"; thay chỗ bảng. |
+| 9 | Ô chọn dòng | Checkbox | Trạng thái chọn theo mã | Cột đầu tiên mỗi dòng; dòng được chọn có nền xanh nhạt; `aria-label` "Chọn {code}". |
+| 10 | Ô chọn tất cả | Checkbox 3 trạng thái | Các dòng đang hiển thị | Ở đầu cột chọn; chọn hết / nửa chọn / không chọn; chỉ tác động các dòng đang hiển thị. |
+| 11 | Khung "Đã chọn" | Panel + chip | Các nhân viên đang chọn (lấy từ danh sách chưa lọc) | Chỉ hiện khi có người được chọn: "Đã chọn {N} nhân viên", thống kê ("{a} mã ACTIVE · {b} mã REVOKED · {c} chưa cấp mã · {d} đã nghỉ"), ghi chú "{k} người đã chọn đang nằm ngoài bộ lọc hiện tại.", mỗi người một chip "{code} – {fullName}" có nút ✕ bỏ chọn, nút "Chọn thêm {m} kết quả đang hiển thị" và "Bỏ chọn tất cả". |
 
 ### 7.3. Hành động (input → output)
 
@@ -80,9 +86,17 @@ Nguồn: [wireframes.drawio](../../drawio/wireframes.drawio), tab `A-02 Tab Nhâ
 | A02-A4 | Thu hồi / Cấp lại | Bấm [6] | – | Mở A-03 với dòng đã chọn |
 | A02-A5 | Thử lại | Bấm nút ở [8] | Gọi lại request cuối | Hiện [4] hoặc giữ [8] |
 | A02-A6 | Cập nhật sau thao tác | A-03 trả `EmployeeView` | Thay dòng tương ứng | Dòng hiển thị trạng thái mới, không tải lại cả bảng |
+| A02-A7 | Chọn / bỏ chọn một dòng | Bấm ô [9] | Bật/tắt mã trong tập đã chọn | Cập nhật nền dòng, [10] và [11] |
+| A02-A8 | Chọn dải | Shift + bấm ô [9] | Chọn/bỏ chọn mọi dòng đang hiển thị từ dòng bấm lần trước tới dòng này | Cập nhật [10] và [11] |
+| A02-A9 | Chọn tất cả | Bấm ô [10] | Chọn mọi dòng đang hiển thị; nếu đã chọn hết thì bỏ chọn các dòng đó | Cập nhật [11]; người đang bị lọc ẩn giữ nguyên |
+| A02-A10 | Bỏ chọn | Bấm ✕ của chip, "Bỏ chọn tất cả" | Bỏ người đó / bỏ tất cả | Chip biến mất; hết người chọn thì ẩn [11] |
 
 ## 8. Tiêu chí chấp nhận
 
 - [ ] Mở tab → 20 dòng, E0019 có nhãn "Đã nghỉ" và không có nút Cấp lại; E0020 có "REVOKED" và chỉ có nút Cấp lại.
 - [ ] Gõ "nguyen" → chỉ một request sau khi ngừng gõ 300 ms; kết quả rỗng → [7].
 - [ ] Backend lỗi → [8]; Thử lại thành công → bảng hiện lại.
+- [ ] Chọn 4 người gồm E0001, E0002, E0019, E0020 → khung hiện "Đã chọn 4 nhân viên", thống kê "3 mã ACTIVE · 1 mã REVOKED · 1 đã nghỉ" và đủ 4 chip.
+- [ ] Chọn E0002 rồi Shift + bấm E0005 → chọn đủ 4 dòng E0002…E0005.
+- [ ] Chọn E0001 rồi tìm "khanh" → E0001 vẫn nằm trong khung kèm ghi chú "1 người đã chọn đang nằm ngoài bộ lọc hiện tại."; xóa ô tìm → ghi chú biến mất.
+- [ ] Ô chọn tất cả: nửa chọn khi mới chọn một phần; bấm → chọn hết; bấm lại → bỏ chọn hết và ẩn khung.
