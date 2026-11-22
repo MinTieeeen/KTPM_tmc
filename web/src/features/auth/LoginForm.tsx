@@ -1,10 +1,12 @@
 // AU-01 Đăng nhập – docs/web/screens/AU-01-login.md (dùng chung cho Portal và Admin).
+import { Eye, EyeOff, Lock, LogIn, QrCode, User } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { asApiError, networkError } from '@/shared/api/apiError';
 import { Alert } from '@/features/common/Alert';
 import { Button } from '@/features/common/Button';
 import { loginErrorText } from '@/features/common/errorTexts';
+import { ThemeToggle } from '@/features/common/ThemeToggle';
 import styles from './Auth.module.css';
 import { useAuth } from './authContext';
 import { PAGES } from './pages';
@@ -53,25 +55,37 @@ export function LoginForm({ page }: { page: Page }) {
 
   return (
     <main className={styles.screen}>
+      <ThemeToggle className={styles.themeCorner} />
       <div className={styles.card}>
-        <h1 className={styles.title}>{PAGES[page].title}</h1>
-        <p className={styles.subtitle}>Đăng nhập để tiếp tục</p>
+        <div className={styles.brand}>
+          <span className={styles.logo}>
+            <QrCode size={24} aria-hidden="true" />
+          </span>
+          <div>
+            <h1 className={styles.title}>{PAGES[page].title}</h1>
+            <p className={styles.subtitle}>Đăng nhập để tiếp tục</p>
+          </div>
+        </div>
         <form className={styles.form} onSubmit={onSubmit}>
           <label className={styles.field}>
             Tên đăng nhập
-            <input
-              ref={usernameRef}
-              className={styles.input}
-              type="text"
-              autoComplete="username"
-              maxLength={32}
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-            />
+            <span className={styles.inputWrap}>
+              <User className={styles.inputIcon} size={17} aria-hidden="true" />
+              <input
+                ref={usernameRef}
+                className={styles.input}
+                type="text"
+                autoComplete="username"
+                maxLength={32}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
+            </span>
           </label>
           <label className={styles.field}>
             Mật khẩu
-            <span className={styles.passwordRow}>
+            <span className={styles.inputWrap}>
+              <Lock className={styles.inputIcon} size={17} aria-hidden="true" />
               <input
                 ref={passwordRef}
                 className={`${styles.input} ${passwordInvalid ? styles.inputInvalid : ''}`}
@@ -82,21 +96,32 @@ export function LoginForm({ page }: { page: Page }) {
                 aria-invalid={passwordInvalid || undefined}
                 onChange={(e) => setPassword(e.target.value)}
               />
-              <Button
-                variant="ghost"
+              <button
+                type="button"
+                className={styles.eye}
                 aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                 aria-pressed={showPassword}
                 onClick={() => setShowPassword((v) => !v)}
               >
-                👁
-              </Button>
+                {showPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
+              </button>
             </span>
           </label>
           {error && <Alert kind="error">{error}</Alert>}
-          <Button type="submit" block disabled={!canSubmit} loading={submitting} loadingText="Đang đăng nhập…">
+          <Button
+            type="submit"
+            block
+            icon={LogIn}
+            disabled={!canSubmit}
+            loading={submitting}
+            loadingText="Đang đăng nhập…"
+          >
             Đăng nhập
           </Button>
-          <p className={styles.note}>Phiên đăng nhập kết thúc khi đóng tab</p>
+          <p className={styles.note}>
+            <Lock size={12} aria-hidden="true" />
+            Phiên đăng nhập kết thúc khi đóng tab
+          </p>
         </form>
       </div>
     </main>
