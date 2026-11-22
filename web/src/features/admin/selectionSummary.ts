@@ -23,13 +23,19 @@ export function summarizeSelection(employees: EmployeeView[]): SelectionSummary 
   };
 }
 
-/** Các phần có giá trị > 0, theo thứ tự cố định; dùng để nối thành câu mô tả. */
-export function summaryParts(s: SelectionSummary): string[] {
-  const parts: Array<[number, string]> = [
-    [s.active, 'mã ACTIVE'],
-    [s.revoked, 'mã REVOKED'],
-    [s.noCredential, 'chưa cấp mã'],
-    [s.inactive, 'đã nghỉ'],
+export interface SummaryPart {
+  key: 'active' | 'revoked' | 'noCredential' | 'inactive';
+  label: string;
+  color: 'green' | 'red' | 'gray';
+}
+
+/** Các nhóm có người (> 0), theo thứ tự cố định; màu khớp với nhãn trong bảng và chấm trên chip. */
+export function summaryParts(s: SelectionSummary): SummaryPart[] {
+  const parts: Array<[number, SummaryPart]> = [
+    [s.active, { key: 'active', label: 'mã ACTIVE', color: 'green' }],
+    [s.revoked, { key: 'revoked', label: 'mã REVOKED', color: 'red' }],
+    [s.noCredential, { key: 'noCredential', label: 'chưa cấp mã', color: 'gray' }],
+    [s.inactive, { key: 'inactive', label: 'đã nghỉ', color: 'gray' }],
   ];
-  return parts.filter(([n]) => n > 0).map(([n, label]) => `${n} ${label}`);
+  return parts.filter(([n]) => n > 0).map(([n, part]) => ({ ...part, label: `${n} ${part.label}` }));
 }

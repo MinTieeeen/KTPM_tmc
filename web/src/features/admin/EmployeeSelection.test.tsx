@@ -50,7 +50,7 @@ describe('A-02 chọn một hoặc nhiều nhân viên', () => {
     ['E0001', 'E0002', 'E0019', 'E0020'].forEach((c) => pick(c));
     const region = within(bar()!);
     expect(region.getByText('Đã chọn 4 nhân viên')).toBeTruthy();
-    expect(region.getByText('3 mã ACTIVE · 1 mã REVOKED · 1 đã nghỉ')).toBeTruthy();
+    ['3 mã ACTIVE', '1 mã REVOKED', '1 đã nghỉ'].forEach((label) => expect(region.getByText(label)).toBeTruthy());
     ['E0001 – Nguyen Van An', 'E0002 – Tran Thi Bich', 'E0019 – Lam Van Uy', 'E0020 – Tran Thi Binh'].forEach((t) =>
       expect(region.getByText(t)).toBeTruthy(),
     );

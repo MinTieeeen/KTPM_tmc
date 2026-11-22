@@ -30,11 +30,11 @@ describe('summarizeSelection', () => {
 });
 
 describe('summaryParts', () => {
-  it('chỉ nêu các nhóm có người, theo thứ tự cố định', () => {
+  it('chỉ nêu các nhóm có người, theo thứ tự cố định, kèm màu khớp nhãn trong bảng', () => {
     expect(summaryParts({ total: 5, active: 3, revoked: 1, noCredential: 0, inactive: 1 })).toEqual([
-      '3 mã ACTIVE',
-      '1 mã REVOKED',
-      '1 đã nghỉ',
+      { key: 'active', label: '3 mã ACTIVE', color: 'green' },
+      { key: 'revoked', label: '1 mã REVOKED', color: 'red' },
+      { key: 'inactive', label: '1 đã nghỉ', color: 'gray' },
     ]);
     expect(summaryParts({ total: 0, active: 0, revoked: 0, noCredential: 0, inactive: 0 })).toEqual([]);
   });

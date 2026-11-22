@@ -325,36 +325,71 @@
 }
 
 .table tbody tr.rowSelected {
-  background: color-mix(in srgb, var(--primary) 9%, var(--surface));
+  background: color-mix(in srgb, var(--primary) 10%, var(--surface));
 }
 
 .table tbody tr.rowSelected:hover {
-  background: color-mix(in srgb, var(--primary) 14%, var(--surface));
+  background: color-mix(in srgb, var(--primary) 15%, var(--surface));
 }
 
+/* Vạch xanh bên trái giúp nhìn ra dòng đang chọn kể cả khi cuộn nhanh. */
+.table tbody tr.rowSelected td:first-child {
+  box-shadow: inset 3px 0 0 var(--primary);
+}
+
+/* Khung "Đã chọn" dính ở đầu màn hình khi cuộn để luôn thấy số lượng và nút thao tác. */
 .selection {
+  position: sticky;
+  top: var(--space-2);
+  z-index: 5;
   margin-bottom: var(--space-4);
   padding: var(--space-3) var(--space-4);
   background: var(--primary-soft);
   color: var(--primary-soft-text);
-  border: 1px solid color-mix(in srgb, var(--primary) 40%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 55%, transparent);
+  border-left-width: 5px;
   border-radius: var(--radius-md);
+  box-shadow: var(--shadow-2);
 }
 
 .selectionHead {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-2) var(--space-3);
+  gap: var(--space-3);
+}
+
+.selectionCount {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 var(--space-2);
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--primary-contrast);
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.selectionSummary {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
 }
 
 .selectionTitle {
-  font-size: 14px;
+  font-size: 15px;
 }
 
-.selectionMeta {
-  font-size: 13px;
-  font-variant-numeric: tabular-nums;
+.selectionBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .selectionActions {
@@ -362,6 +397,32 @@
   flex-wrap: wrap;
   gap: var(--space-2);
   margin-left: auto;
+}
+
+.selectionTools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.onlySelected {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-right: auto;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.onlySelected input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--primary);
+  cursor: pointer;
 }
 
 .selectionNote {
@@ -393,6 +454,25 @@
   font-size: 13px;
 }
 
+.chipDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+
+.dot_green {
+  background: var(--success);
+}
+
+.dot_red {
+  background: var(--danger);
+}
+
+.dot_gray {
+  background: var(--text-muted);
+}
+
 .chipRemove {
   display: inline-flex;
   align-items: center;
@@ -413,9 +493,126 @@
 }
 
 @media (max-width: 640px) {
+  .selection {
+    top: 0;
+  }
+
   .selectionActions {
     margin-left: 0;
+    width: 100%;
   }
+}
+
+/* ---------- A-05 thao tác hàng loạt ---------- */
+.bulkLead {
+  margin: 0;
+}
+
+.bulkList {
+  display: flex;
+  flex-direction: column;
+  max-height: 220px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.bulkItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 8px var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.bulkItem:last-child {
+  border-bottom: 0;
+}
+
+.bulkItemName {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+}
+
+.bulkItemStatus {
+  flex: none;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.statusSuccess {
+  color: var(--success-fg);
+  font-weight: 600;
+}
+
+.statusFailed {
+  max-width: 55%;
+  color: var(--danger-fg);
+  font-weight: 600;
+  text-align: right;
+}
+
+.iconSuccess {
+  flex: none;
+  color: var(--success);
+}
+
+.iconFailed {
+  flex: none;
+  color: var(--danger);
+}
+
+.iconMuted {
+  flex: none;
+  color: var(--text-muted);
+}
+
+.bulkSkipped {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.bulkProgressText {
+  margin-bottom: var(--space-2);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.bar {
+  height: 8px;
+  overflow: hidden;
+  background: var(--surface-2);
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.barFill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: inherit;
+  transition: width 0.25s ease;
+}
+
+.typedInput {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  font-weight: 400;
+  text-transform: uppercase;
+}
+
+.typedInput:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
 }
 
 /* ---------- A-03 hộp thoại ---------- */

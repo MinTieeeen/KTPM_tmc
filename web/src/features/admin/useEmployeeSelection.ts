@@ -9,6 +9,8 @@ export interface EmployeeSelection {
   toggleAllVisible: () => void;
   selectMany: (codes: string[]) => void;
   remove: (code: string) => void;
+  /** Bỏ chọn nhiều người một lúc (vd. những người đã xử lý xong ở thao tác hàng loạt). */
+  removeMany: (codes: string[]) => void;
   clear: () => void;
 }
 
@@ -64,5 +66,13 @@ export function useEmployeeSelection(visibleCodes: string[]): EmployeeSelection 
     anchor.current = null;
   }, []);
 
-  return { selected, toggle, toggleAllVisible, selectMany, remove, clear };
+  const removeMany = useCallback((codes: string[]) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      codes.forEach((c) => next.delete(c));
+      return next;
+    });
+  }, []);
+
+  return { selected, toggle, toggleAllVisible, selectMany, remove, removeMany, clear };
 }
