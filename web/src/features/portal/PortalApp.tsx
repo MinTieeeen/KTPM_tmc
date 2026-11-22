@@ -20,6 +20,7 @@ function QrScreen() {
       token={query.data}
       receivedAtMs={query.dataUpdatedAt}
       refreshFailed={query.isError}
+      refreshing={query.isFetching}
     />
   );
 }

@@ -1,4 +1,5 @@
 // P-01 Mã QR cá nhân – docs/web/screens/P-01-qr-code.md (QR level M, đếm ngược, sao chép chuỗi).
+import { Copy, RefreshCw } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import type { CurrentUser, QrTokenResponse } from '@/shared/api/centralApi';
 import { Alert } from '@/features/common/Alert';
@@ -18,9 +19,11 @@ interface Props {
   receivedAtMs: number;
   /** Lần làm mới gần nhất lỗi (mạng/5xx). */
   refreshFailed: boolean;
+  /** Đang gọi lấy mã mới (icon làm mới quay). */
+  refreshing?: boolean;
 }
 
-export function QrPage({ user, token, receivedAtMs, refreshFailed }: Props) {
+export function QrPage({ user, token, receivedAtMs, refreshFailed, refreshing = false }: Props) {
   // Đồng hồ nhảy mỗi giây nên có thể chậm hơn lúc nhận mã; không để đếm ngược vượt thời hạn thật.
   const nowMs = Math.max(useNow(1000), receivedAtMs);
   const copy = useCopy();
@@ -31,26 +34,32 @@ export function QrPage({ user, token, receivedAtMs, refreshFailed }: Props) {
 
   const onCopy = async () => {
     if (!visibleToken) return;
-    toast.show((await copy(visibleToken.raw)) ? 'Đã sao chép' : 'Không sao chép được');
+    if (await copy(visibleToken.raw)) toast.show('Đã sao chép');
+    else toast.show('Không sao chép được', 'error');
   };
 
   return (
     <PortalLayout>
-      <p className={styles.employee}>Nhân viên {user.employeeCode ?? ''}</p>
-      <p className={styles.account}>tài khoản {user.username}</p>
+      <div className={styles.who}>
+        <p className={styles.employee}>Nhân viên {user.employeeCode ?? ''}</p>
+        <p className={styles.account}>tài khoản {user.username}</p>
+      </div>
 
       {visibleToken ? (
-        <>
+        <div className={styles.card}>
           <div className={styles.qrBox} data-testid="qr-code">
             <QRCodeSVG value={visibleToken.raw} size={200} level="M" marginSize={0} title="Mã QR chấm công" />
           </div>
           <QrCountdown expiresAtMs={expiresAtMs} receivedAtMs={receivedAtMs} nowMs={nowMs} />
-          <p className={styles.hint}>Tự làm mới mỗi {visibleToken.refreshAfterSec} giây</p>
-          <Button variant="secondary" onClick={onCopy}>
-            ⧉ Sao chép chuỗi
+          <p className={styles.hint}>
+            <RefreshCw size={13} className={refreshing ? styles.spin : undefined} aria-hidden="true" />
+            Tự làm mới mỗi {visibleToken.refreshAfterSec} giây
+          </p>
+          <Button variant="secondary" icon={Copy} onClick={onCopy}>
+            Sao chép chuỗi
           </Button>
           {refreshFailed && <Alert kind="warning">{TEXT_QR_REFRESH_WARNING}</Alert>}
-        </>
+        </div>
       ) : token || refreshFailed ? (
         <Alert kind="warning" className={styles.fullWidth}>
           {TEXT_QR_REFRESH_FAILED}
