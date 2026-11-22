@@ -1,0 +1,32 @@
+/* Biến thiết kế dùng chung cho Portal và Admin (FE-2). */
+:root {
+  --c-primary: #1d4ed8;
+  --c-primary-dark: #1e40af;
+  --c-primary-soft: #dbeafe;
+  --c-danger: #dc2626;
+  --c-danger-dark: #b91c1c;
+  --c-danger-soft: #fee2e2;
+  --c-success: #16a34a;
+  --c-success-soft: #dcfce7;
+  --c-warning: #ea580c;
+  --c-warning-soft: #ffedd5;
+  --c-notice: #a16207;
+  --c-notice-soft: #fef9c3;
+  --c-text: #111827;
+  --c-muted: #6b7280;
+  --c-border: #d1d5db;
+  --c-surface: #ffffff;
+  --c-bg: #f3f4f6;
+  --c-dark: #111827;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  --radius: 6px;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+}

@@ -1,0 +1,25 @@
+.badge {
+  display: inline-block;
+  padding: 2px var(--space-2);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.green {
+  background: var(--c-success-soft);
+  color: #166534;
+}
+.red {
+  background: var(--c-danger-soft);
+  color: var(--c-danger-dark);
+}
+.orange {
+  background: var(--c-warning-soft);
+  color: #9a3412;
+}
+.gray {
+  background: #e5e7eb;
+  color: #4b5563;
+}
