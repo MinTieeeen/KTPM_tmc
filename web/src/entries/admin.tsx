@@ -7,6 +7,7 @@ import { AuthProvider } from '@/features/auth/AuthProvider';
 import { enableMocksIfRequested } from '@/features/common/bootstrap';
 import { createQueryClient } from '@/features/common/queryClient';
 import { ToastProvider } from '@/features/common/Toast';
+import '@/features/common/fonts.css';
 import '@/features/common/tokens.css';
 import '@/features/common/global.css';
 

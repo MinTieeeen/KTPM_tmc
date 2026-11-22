@@ -1,4 +1,4 @@
-/* Reset tối thiểu; import một lần ở entry portal/admin. */
+/* Reset tối thiểu, font và chuyển động; import một lần ở entry portal/admin (sau fonts.css, tokens.css). */
 *,
 *::before,
 *::after {
@@ -12,11 +12,17 @@ body,
   min-height: 100%;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   font-family: var(--font);
   font-size: 14px;
-  color: var(--c-text);
-  background: var(--c-bg);
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
 }
 
 button,
@@ -27,7 +33,30 @@ textarea {
   color: inherit;
 }
 
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
 :focus-visible {
-  outline: 2px solid var(--c-primary);
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
+}
+
+::selection {
+  background: var(--primary-soft);
+  color: var(--primary-soft-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

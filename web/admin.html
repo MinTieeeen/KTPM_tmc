@@ -3,6 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      // Đặt theme trước khi React chạy để không nhấp nháy (cùng quy tắc với features/common/theme.ts).
+      try {
+        var p = localStorage.getItem('tmc.theme');
+        var dark = p === 'dark' || (p !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      } catch (e) {}
+    </script>
     <link rel="icon" href="data:," />
     <title>TMC Admin/HR</title>
   </head>
