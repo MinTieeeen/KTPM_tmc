@@ -7,15 +7,38 @@
   flex-direction: column;
   align-items: center;
   gap: var(--space-2);
+  width: max-content;
+  max-width: calc(100vw - 2 * var(--space-4));
   transform: translateX(-50%);
   pointer-events: none;
 }
 
 .toast {
-  padding: var(--space-2) var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 10px var(--space-4);
   border-radius: 999px;
-  background: #374151;
-  color: #fff;
+  background: var(--appbar-bg);
+  color: var(--appbar-text);
+  border: 1px solid color-mix(in srgb, var(--appbar-text) 18%, transparent);
   font-size: 13px;
-  box-shadow: var(--shadow);
+  font-weight: 500;
+  box-shadow: var(--shadow-2);
+  animation: toast-in 0.2s ease-out;
+}
+
+.success svg {
+  color: var(--success);
+}
+
+.error svg {
+  color: var(--warning);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
 }

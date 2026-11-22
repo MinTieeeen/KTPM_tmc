@@ -1,4 +1,6 @@
-// Hộp thoại modal: Esc và click ngoài để đóng (bị chặn khi `locked`), focus vào hộp khi mở, trả focus khi đóng.
+// Hộp thoại modal: Esc, nút X và click ngoài để đóng (bị chặn khi `locked`), focus vào hộp khi mở, trả focus khi đóng.
+import { X } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useEffect, useId, useRef } from 'react';
 import type { ReactNode } from 'react';
 import styles from './Dialog.module.css';
@@ -7,11 +9,13 @@ interface Props {
   title: string;
   onClose: () => void;
   locked?: boolean;
+  icon?: LucideIcon;
+  tone?: 'danger' | 'primary';
   children: ReactNode;
   footer?: ReactNode;
 }
 
-export function Dialog({ title, onClose, locked = false, children, footer }: Props) {
+export function Dialog({ title, onClose, locked = false, icon: Icon, tone = 'primary', children, footer }: Props) {
   const titleId = useId();
   const boxRef = useRef<HTMLDivElement>(null);
   const lockedRef = useRef(locked);
@@ -47,9 +51,19 @@ export function Dialog({ title, onClose, locked = false, children, footer }: Pro
         aria-labelledby={titleId}
         tabIndex={-1}
       >
-        <h2 id={titleId} className={styles.title}>
-          {title}
-        </h2>
+        <button type="button" className={styles.close} aria-label="Đóng" disabled={locked} onClick={onClose}>
+          <X size={18} aria-hidden="true" />
+        </button>
+        <div className={styles.header}>
+          {Icon && (
+            <span className={`${styles.badge} ${tone === 'danger' ? styles.toneDanger : styles.tonePrimary}`}>
+              <Icon size={20} aria-hidden="true" />
+            </span>
+          )}
+          <h2 id={titleId} className={styles.title}>
+            {title}
+          </h2>
+        </div>
         {children}
         {footer && <div className={styles.footer}>{footer}</div>}
       </div>

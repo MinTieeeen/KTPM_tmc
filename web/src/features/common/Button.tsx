@@ -1,5 +1,6 @@
-// Nút dùng chung của Portal/Admin; `loading` khóa nút và hiện chữ `loadingText` (nếu có).
+// Nút dùng chung của Portal/Admin; `icon` hiện bên trái, `loading` khóa nút và hiện chữ `loadingText` (nếu có).
 import type { ButtonHTMLAttributes } from 'react';
+import type { LucideIcon } from 'lucide-react';
 import styles from './Button.module.css';
 import { Spinner } from './Spinner';
 
@@ -11,6 +12,7 @@ interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
   block?: boolean;
   loading?: boolean;
   loadingText?: string;
+  icon?: LucideIcon;
 }
 
 export function Button({
@@ -19,6 +21,7 @@ export function Button({
   block,
   loading,
   loadingText,
+  icon: Icon,
   disabled,
   className,
   children,
@@ -30,7 +33,7 @@ export function Button({
     .join(' ');
   return (
     <button {...rest} type={type} className={classes} disabled={disabled || loading} aria-busy={loading || undefined}>
-      {loading && <Spinner />}
+      {loading ? <Spinner /> : Icon && <Icon className={styles.icon} size={small ? 15 : 17} aria-hidden="true" />}
       {loading && loadingText ? loadingText : children}
     </button>
   );

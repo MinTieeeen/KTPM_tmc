@@ -41,7 +41,7 @@ export function QrPage({ user, token, receivedAtMs, refreshFailed }: Props) {
 
       {visibleToken ? (
         <>
-          <div className={styles.qrBox}>
+          <div className={styles.qrBox} data-testid="qr-code">
             <QRCodeSVG value={visibleToken.raw} size={200} level="M" marginSize={0} title="Mã QR chấm công" />
           </div>
           <QrCountdown expiresAtMs={expiresAtMs} receivedAtMs={receivedAtMs} nowMs={nowMs} />

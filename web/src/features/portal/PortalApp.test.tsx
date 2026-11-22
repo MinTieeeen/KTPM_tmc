@@ -23,7 +23,7 @@ afterEach(() => {
   mock.server.resetHandlers();
 });
 
-const hasQr = (container: HTMLElement) => container.querySelector('svg') !== null;
+const hasQr = (container: HTMLElement) => container.querySelector('[data-testid="qr-code"]') !== null;
 
 describe('P-01 Mã QR cá nhân', () => {
   it('hiện mã nhân viên, tài khoản, QR, đếm ngược và ghi chú làm mới', async () => {
