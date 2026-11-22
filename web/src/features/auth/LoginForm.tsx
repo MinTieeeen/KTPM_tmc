@@ -1,0 +1,104 @@
+// AU-01 Đăng nhập – docs/web/screens/AU-01-login.md (dùng chung cho Portal và Admin).
+import { useEffect, useRef, useState } from 'react';
+import type { FormEvent } from 'react';
+import { asApiError, networkError } from '@/shared/api/apiError';
+import { Alert } from '@/features/common/Alert';
+import { Button } from '@/features/common/Button';
+import { loginErrorText } from '@/features/common/errorTexts';
+import styles from './Auth.module.css';
+import { useAuth } from './authContext';
+import { PAGES } from './pages';
+import type { Page } from './pages';
+
+export function LoginForm({ page }: { page: Page }) {
+  const { login } = useAuth();
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [passwordInvalid, setPasswordInvalid] = useState(false);
+  const inFlight = useRef(false);
+  const usernameRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    usernameRef.current?.focus();
+  }, []);
+
+  const canSubmit = username.length > 0 && password.length > 0 && !submitting;
+
+  const onSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!canSubmit || inFlight.current) return;
+    inFlight.current = true;
+    setSubmitting(true);
+    setError(null);
+    setPasswordInvalid(false);
+    try {
+      await login(username, password);
+    } catch (err) {
+      const apiError = asApiError(err) ?? networkError();
+      setError(loginErrorText(apiError));
+      if (apiError.code === 'INVALID_CREDENTIALS') {
+        setPassword('');
+        setPasswordInvalid(true);
+        passwordRef.current?.focus();
+      }
+      setSubmitting(false);
+    } finally {
+      inFlight.current = false;
+    }
+  };
+
+  return (
+    <main className={styles.screen}>
+      <div className={styles.card}>
+        <h1 className={styles.title}>{PAGES[page].title}</h1>
+        <p className={styles.subtitle}>Đăng nhập để tiếp tục</p>
+        <form className={styles.form} onSubmit={onSubmit}>
+          <label className={styles.field}>
+            Tên đăng nhập
+            <input
+              ref={usernameRef}
+              className={styles.input}
+              type="text"
+              autoComplete="username"
+              maxLength={32}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+            />
+          </label>
+          <label className={styles.field}>
+            Mật khẩu
+            <span className={styles.passwordRow}>
+              <input
+                ref={passwordRef}
+                className={`${styles.input} ${passwordInvalid ? styles.inputInvalid : ''}`}
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
+                maxLength={128}
+                value={password}
+                aria-invalid={passwordInvalid || undefined}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <Button
+                variant="ghost"
+                aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                aria-pressed={showPassword}
+                onClick={() => setShowPassword((v) => !v)}
+              >
+                👁
+              </Button>
+            </span>
+          </label>
+          {error && <Alert kind="error">{error}</Alert>}
+          <Button type="submit" block disabled={!canSubmit} loading={submitting} loadingText="Đang đăng nhập…">
+            Đăng nhập
+          </Button>
+          <p className={styles.note}>Phiên đăng nhập kết thúc khi đóng tab</p>
+        </form>
+      </div>
+    </main>
+  );
+}

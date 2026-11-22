@@ -1,0 +1,92 @@
+.screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: var(--space-4);
+}
+
+.card {
+  width: 100%;
+  max-width: 380px;
+  padding: var(--space-5);
+  background: var(--c-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.cardCenter {
+  composes: card;
+  text-align: center;
+}
+
+.title {
+  margin: 0;
+  font-size: 24px;
+  color: var(--c-primary);
+}
+
+.subtitle {
+  margin: var(--space-1) 0 var(--space-5);
+  color: var(--c-muted);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-weight: 600;
+}
+
+.input {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  background: #fff;
+  font-weight: 400;
+}
+
+.inputInvalid {
+  border-color: var(--c-danger);
+}
+
+.passwordRow {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.note {
+  margin: 0;
+  font-size: 11px;
+  font-style: italic;
+  color: var(--c-muted);
+  text-align: center;
+}
+
+.icon {
+  margin: 0 0 var(--space-3);
+  font-size: 40px;
+}
+
+.heading {
+  margin: 0 0 var(--space-3);
+  font-size: 24px;
+}
+
+.hint {
+  margin: var(--space-3) 0 var(--space-5);
+  font-size: 13px;
+  color: var(--c-muted);
+}
+
+.text {
+  margin: 0;
+}
