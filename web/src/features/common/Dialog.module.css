@@ -1,0 +1,129 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  background: var(--overlay);
+  backdrop-filter: blur(2px);
+  animation: fade-in 0.15s ease-out;
+}
+
+.dialog {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: var(--space-5);
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-3);
+  animation: pop-in 0.18s ease-out;
+}
+
+.wide {
+  max-width: 640px;
+}
+
+.dialog:focus {
+  outline: none;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0 var(--space-6) var(--space-4) 0;
+}
+
+.badge {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.toneDanger {
+  background: var(--danger-soft);
+  color: var(--danger-soft-text);
+}
+
+.tonePrimary {
+  background: var(--primary-soft);
+  color: var(--primary-soft-text);
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.close {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.close:hover:not(:disabled) {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.close:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Chỉ phần thân cuộn; tiêu đề và chân hộp (nút xác nhận) luôn nhìn thấy dù nội dung dài. */
+.body {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0 calc(var(--space-2) * -1);
+  padding: 4px var(--space-2) 6px;
+  overflow-y: auto;
+}
+
+.footer {
+  display: flex;
+  flex: none;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}

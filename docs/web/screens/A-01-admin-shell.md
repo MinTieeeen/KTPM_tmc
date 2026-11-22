@@ -55,11 +55,12 @@ Nguồn: [wireframes.drawio](../../drawio/wireframes.drawio), tab `A-01 Khung tr
 
 | # | Thành phần | Loại | Dữ liệu (nguồn) | Cách hiển thị |
 |---|---|---|---|---|
-| 1 | Tiêu đề ứng dụng | App bar text | Tĩnh | Nền tối, chữ trắng 18 px đậm: "TMC Admin – Quản trị chấm công". |
+| 1 | Tiêu đề ứng dụng | App bar text | Tĩnh | Nền tối, chữ trắng 17 px đậm cạnh ô logo: "TMC Admin – Quản trị chấm công". Màn hình hẹp (≤ 640 px): thanh tiêu đề xuống hai hàng, nút Đăng xuất chỉ còn icon. |
 | 2 | Người dùng | Text | `GET /auth/me`: `username`, `role` | "admin (ADMIN)" chữ trắng 13 px, bên phải. |
 | 3 | Nút Đăng xuất | Button ghost | – | Góc phải thanh tiêu đề. |
 | 4 | Thanh tab | Tabs (link hash) | `location.hash` | Hai tab "Nhân viên" và "Trạm"; tab hiện tại chữ xanh đậm và gạch chân xanh 4 px. |
 | 5 | Vùng nội dung | Router outlet | Route hiện tại | Hiện A-02 (`#/employees`) hoặc A-04 (`#/stations`). |
+| 6 | Nút đổi giao diện | Nhóm 3 nút (Sáng / Tối / Theo hệ thống) | `localStorage` khóa `tmc.theme` | Trên thanh tiêu đề, cạnh nút Đăng xuất; mặc định theo hệ điều hành, lựa chọn được lưu và áp ngay khi tải trang (không nhấp nháy). Mã QR luôn đen trên nền trắng ở cả hai chế độ. |
 
 ### 7.3. Hành động (input → output)
 

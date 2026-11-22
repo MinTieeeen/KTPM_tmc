@@ -19,6 +19,7 @@
 | A-01 | [Khung trang quản trị](A-01-admin-shell.md) | `admin.html` | layout | Should | Đã thiết kế · [wireframe](../../images/screens/A-01-admin-shell.png) |
 | A-02 | [Tab Nhân viên](A-02-employees-tab.md) | `admin.html#/employees` | tab | Should | Đã thiết kế · [wireframe](../../images/screens/A-02-employees-tab.png) |
 | A-03 | [Hộp thoại thao tác QR](A-03-qr-action-dialog.md) | dialog trên `admin.html#/employees` | dialog | Should | Đã thiết kế · [wireframe](../../images/screens/A-03-qr-action-dialog.png) |
+| A-05 | [Hộp thoại thao tác hàng loạt](A-05-bulk-action-dialog.md) | dialog trên `admin.html#/employees` | dialog | Could | Đã hiện thực · [ảnh chụp](../../images/screens/A-05-bulk-action-dialog.png) (chưa vẽ wireframe) |
 | A-04 | [Tab Trạm](A-04-stations-tab.md) | `admin.html#/stations` | tab | Should | Đã thiết kế · [wireframe](../../images/screens/A-04-stations-tab.png) |
 
 ## Khung của một file màn hình
@@ -41,6 +42,7 @@
 
 - Tên file: `<mã>-<slug-tiếng-anh>.md`, ví dụ `P-01-qr-code.md`.
 - Wireframe: mọi màn hình nằm chung trong `docs/drawio/wireframes.drawio` (mỗi màn hình một tab, tên tab = mã + tên màn hình); ảnh xuất ở `docs/images/screens/<tên file>.png`. Sinh lại: `python artifacts/drawio/02_spec/wireframes.py tmc/docs/drawio/wireframes.drawio` rồi xuất PNG từng tab bằng draw.io (`-p <số tab>`).
+- Giao diện thật có hai chế độ sáng/tối (token ở `web/src/features/common/tokens.css`); wireframe chỉ vẽ chế độ sáng. Icon dùng bộ lucide, không dùng emoji.
 - Wireframe là low-fidelity: thể hiện bố cục, thành phần và trạng thái; màu chỉ dùng cho ý nghĩa (xanh = thành công, đỏ = lỗi/từ chối, cam = cảnh báo).
 - Thêm màn hình mới: thêm dòng vào sitemap § 4 (cùng cây ở § 3 và sơ đồ trong `web.drawio`), rồi tạo file theo khung trên.
 - Câu chữ hiển thị (tiếng Việt) phải khớp `docs/api/README.md` § 4, § 5.

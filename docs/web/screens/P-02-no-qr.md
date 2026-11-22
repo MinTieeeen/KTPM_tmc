@@ -59,7 +59,7 @@ Nguồn: [wireframes.drawio](../../drawio/wireframes.drawio), tab `P-02 Không c
 | # | Thành phần | Loại | Dữ liệu (nguồn) | Cách hiển thị |
 |---|---|---|---|---|
 | 1 | Thanh tiêu đề | App bar | Tĩnh | Như P-01 [1]. |
-| 2 | Biểu tượng | Icon 🚫 | Tĩnh | Tròn nền đỏ nhạt, căn giữa. |
+| 2 | Biểu tượng | Icon khiên gạch chéo (ShieldOff) | Tĩnh | Tròn nền đỏ nhạt, căn giữa. |
 | 3 | Thông báo chính | Heading | `code` của Problem Details | 20 px đậm đỏ: `CREDENTIAL_REVOKED` → "Mã QR đã bị thu hồi"; `NO_ACTIVE_CREDENTIAL` → "Bạn chưa được cấp mã QR"; `EMPLOYEE_INACTIVE` → "Hồ sơ nhân viên không còn hiệu lực". |
 | 4 | Hướng dẫn | Text | `code` | 14 px: "Liên hệ phòng Nhân sự (HR) để được cấp lại mã." (biến thể theo `code`). |
 | 5 | Trạng thái kiểm tra lại | Info box | Thời điểm lần hỏi gần nhất | Hộp xám: "Tự kiểm tra lại sau 30 giây · lần cuối {HH:mm:ss}". |

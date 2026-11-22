@@ -1,0 +1,220 @@
+.page {
+  min-height: 100vh;
+  background:
+    radial-gradient(700px 320px at 50% -60px, var(--primary-soft), transparent 70%),
+    var(--bg);
+}
+
+.appBar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--primary);
+  color: var(--primary-contrast);
+  box-shadow: var(--shadow-2);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.appTitle {
+  overflow: hidden;
+  font-size: 16px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.barActions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+@media (max-width: 420px) {
+  .logoutText {
+    display: none;
+  }
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  max-width: 420px;
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-4) var(--space-6);
+  text-align: center;
+}
+
+.who {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.employee {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.account {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  width: 100%;
+  padding: var(--space-5) var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2);
+}
+
+/* Mã QR luôn đen trên nền trắng ở mọi theme: máy quét cần độ tương phản tối đa và vùng yên tĩnh. */
+.qrBox {
+  padding: 12px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  line-height: 0;
+}
+
+.countdown {
+  width: 100%;
+}
+
+.countdownText {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: var(--space-2);
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.expiry {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: var(--space-3);
+  font-size: 13px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.expiryLow {
+  color: var(--warning-fg);
+  font-weight: 600;
+}
+
+.caption {
+  max-width: 300px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.bar {
+  height: 6px;
+  overflow: hidden;
+  background: var(--surface-2);
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.barFill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: inherit;
+  transition: width 1s linear;
+}
+
+.barFillLow {
+  background: var(--warning);
+}
+
+.hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.fullWidth {
+  width: 100%;
+  text-align: left;
+}
+
+.noQrCard {
+  composes: card;
+  padding: var(--space-6) var(--space-4);
+}
+
+.noQrIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--danger-soft);
+  color: var(--danger-soft-text);
+}
+
+.noQrHeading {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--danger-fg);
+}
+
+.noQrHint {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.infoBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-3);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
