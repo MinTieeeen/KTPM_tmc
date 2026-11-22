@@ -1,11 +1,14 @@
 // Tiện ích test: render với QueryClient + AuthProvider + Toast, đăng nhập giả bằng token mock.
-import { render } from '@testing-library/react';
+import { configure, render } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { authSession } from '@/shared/api/authSession';
 import { AuthProvider } from '@/features/auth/AuthProvider';
 import { createQueryClient } from './queryClient';
 import { ToastProvider } from './Toast';
+
+// Mức chờ mặc định 1 s quá sát khi nhiều file test chạy song song (test đầu tiên của file thường chậm nhất).
+configure({ asyncUtilTimeout: 3000 });
 
 export function renderApp(ui: ReactElement) {
   const queryClient = createQueryClient();
