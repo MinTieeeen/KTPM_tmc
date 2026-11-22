@@ -16,7 +16,6 @@
 | AU-02 | [Không có quyền truy cập](AU-02-forbidden.md) | `portal.html`, `admin.html` | screen | Must | Đã thiết kế · [wireframe](../../images/screens/AU-02-forbidden.png) |
 | P-01 | [Mã QR cá nhân](P-01-qr-code.md) | `portal.html` | screen | Must | Đã thiết kế · [wireframe](../../images/screens/P-01-qr-code.png) |
 | P-02 | [Không có mã QR](P-02-no-qr.md) | `portal.html` (409) | state | Must | Đã thiết kế · [wireframe](../../images/screens/P-02-no-qr.png) |
-| P-03 | [Mã gần đây](P-03-recent-codes.md) | `portal.html#/recent` | tab | Could | Đã hiện thực · [ảnh chụp](../../images/screens/P-03-recent-codes.png) (chưa vẽ wireframe) |
 | A-01 | [Khung trang quản trị](A-01-admin-shell.md) | `admin.html` | layout | Should | Đã thiết kế · [wireframe](../../images/screens/A-01-admin-shell.png) |
 | A-02 | [Tab Nhân viên](A-02-employees-tab.md) | `admin.html#/employees` | tab | Should | Đã thiết kế · [wireframe](../../images/screens/A-02-employees-tab.png) |
 | A-03 | [Hộp thoại thao tác QR](A-03-qr-action-dialog.md) | dialog trên `admin.html#/employees` | dialog | Should | Đã thiết kế · [wireframe](../../images/screens/A-03-qr-action-dialog.png) |

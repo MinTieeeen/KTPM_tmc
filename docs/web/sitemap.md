@@ -49,9 +49,8 @@ TMC Web
 ├── portal.html                               (Central, vai trò EMPLOYEE)
 │   ├── AU-01 Đăng nhập                        chưa có token / nhận 401
 │   ├── AU-02 Không có quyền truy cập          vai trò ≠ EMPLOYEE
-│   ├── P-01 Mã QR cá nhân                     đã đăng nhập
-│   │   └── P-02 Không có mã QR «state»        GET /portal/qr-token trả 409
-│   └── P-03 Mã gần đây «tab»                    #/recent, cạnh P-01 (chỉ thông tin, không gọi API riêng)
+│   └── P-01 Mã QR cá nhân                     đã đăng nhập
+│       └── P-02 Không có mã QR «state»        GET /portal/qr-token trả 409
 └── admin.html                                (Central, vai trò ADMIN)
     ├── AU-01 Đăng nhập                        chưa có token / nhận 401
     ├── AU-02 Không có quyền truy cập          vai trò ≠ ADMIN
@@ -74,7 +73,6 @@ TMC Web
 | AU-02 | Không có quyền truy cập | `portal.html`, `admin.html` | screen | Người dùng sai vai trò | Must | [`GET /auth/me`](../api/central.md#2-get-authme) | NFR-SEC-01, DP-10 | [AU-02-forbidden.md](screens/AU-02-forbidden.md) |
 | P-01 | Mã QR cá nhân | `portal.html` | screen | Nhân viên | Must | [`GET /portal/qr-token`](../api/central.md#3-get-portalqr-token) | FR-03, NFR-SEC-05, D1, D2 | [P-01-qr-code.md](screens/P-01-qr-code.md) |
 | P-02 | Không có mã QR | `portal.html` (409) | state | Nhân viên | Must | [`GET /portal/qr-token`](../api/central.md#3-get-portalqr-token) | FR-04, D3 | [P-02-no-qr.md](screens/P-02-no-qr.md) |
-| P-03 | Mã gần đây | `portal.html#/recent` | tab | Nhân viên | Could | (dùng lại kết quả [`GET /portal/qr-token`](../api/central.md#3-get-portalqr-token)) | FR-03, NFR-SEC-05, D1, D2 | [P-03-recent-codes.md](screens/P-03-recent-codes.md) |
 | A-01 | Khung trang quản trị | `admin.html` | layout | Quản trị viên | Should | [`GET /auth/me`](../api/central.md#2-get-authme) | FR-25 | [A-01-admin-shell.md](screens/A-01-admin-shell.md) |
 | A-02 | Tab Nhân viên | `admin.html#/employees` | tab | Quản trị viên | Should | [`GET /employees`](../api/central.md#4-get-employees) | FR-02, FR-04, D3 | [A-02-employees-tab.md](screens/A-02-employees-tab.md) |
 | A-03 | Hộp thoại thao tác QR | dialog trên A-02 | dialog | Quản trị viên | Should | [`POST …/qr/revoke`](../api/central.md#6-post-employeescodeqrrevoke), [`POST …/qr/issue`](../api/central.md#5-post-employeescodeqrissue) | FR-04, INV-01, NFR-SEC-06, D3, T2 | [A-03-qr-action-dialog.md](screens/A-03-qr-action-dialog.md) |
@@ -104,12 +102,9 @@ mở trang ─► có token trong sessionStorage?
 | AU-01 | Đăng nhập thành công, `role` đúng trang | P-01 / A-02 |
 | AU-01 | Đăng nhập thành công, `role` sai trang | AU-02 |
 | bất kỳ màn hình Portal/Admin | API trả 401 | AU-01 (xóa token) |
-| AU-02, P-01, P-02, P-03, A-01 | Bấm **Đăng xuất** | AU-01 (xóa token) |
+| AU-02, P-01, P-02, A-01 | Bấm **Đăng xuất** | AU-01 (xóa token) |
 | P-01 | `GET /portal/qr-token` trả 409 | P-02 |
 | P-02 | Lần hỏi lại (30 s) trả 200 | P-01 |
-| P-01 | Bấm tab **Mã gần đây** | P-03 (`#/recent`) |
-| P-03 | Bấm tab **Mã QR** | P-01 |
-| P-03 | `GET /portal/qr-token` trả 409 | P-02 |
 | A-01 | Chọn tab | A-02 (`#/employees`) / A-04 (`#/stations`) |
 | A-02 | Bấm **Thu hồi** / **Cấp lại** | A-03 |
 | A-03 | Xác nhận thành công / Hủy | A-02 (cập nhật dòng) |
@@ -123,7 +118,7 @@ mở trang ─► có token trong sessionStorage?
 |---|---|---|---|
 | K-01 … K-05 | ✔ (LAN) | ✔ | ✔ |
 | AU-01 | ✔ | ✔ | ✔ |
-| P-01, P-02, P-03 | → AU-01 | ✔ | → AU-02 |
+| P-01, P-02 | → AU-01 | ✔ | → AU-02 |
 | A-01 … A-04 | → AU-01 | → AU-02 | ✔ |
 
 Ẩn/hiện chỉ để tiện dùng; quyền thật được backend kiểm tra ở mọi API (DP-10).

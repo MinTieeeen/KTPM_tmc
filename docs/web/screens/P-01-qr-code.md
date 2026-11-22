@@ -34,7 +34,7 @@ Hiển thị mã QR động của chính nhân viên đang đăng nhập; mã t�
 | Trạng thái | Nội dung chính |
 |---|---|
 | Đang tải | Lần lấy mã đầu tiên. |
-| Hiển thị mã | QR mức sửa lỗi M, hai đồng hồ (đổi mã và hết hạn), mã nhân viên. Có thanh tab "Mã QR" / "Mã gần đây" ([P-03](P-03-recent-codes.md)). |
+| Hiển thị mã | QR mức sửa lỗi M, hai đồng hồ (đổi mã và hết hạn), mã nhân viên. |
 | Đang làm mới | Giữ mã cũ cho tới khi có mã mới. |
 | Mất mạng | Giữ mã hiện tại tới `expiresAt`, sau đó "Không lấy được mã QR, kiểm tra kết nối". |
 
