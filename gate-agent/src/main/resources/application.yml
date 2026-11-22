@@ -28,6 +28,12 @@ spring:
     default-property-inclusion: non_null
   lifecycle:
     timeout-per-shutdown-phase: 10s
+  # G4 – 4 tác vụ nền (push, pull, heartbeat, dọn nonce) chạy trên luồng riêng để một lời gọi Central chậm
+  # không chặn các tác vụ khác (NFR-03)
+  task:
+    scheduling:
+      pool:
+        size: 4
 
 tmc:
   gate:
@@ -61,10 +67,11 @@ tmc:
     fault-injection:
       enabled: false                            # bật ở profile demo: POST /admin/simulate-offline
 
-# G2 – circuit breaker cho cổng xoay: mở sau 5 lỗi liên tiếp, nửa mở sau 30 s
+# G2 – circuit breaker cho cổng xoay: mở sau 5 lỗi liên tiếp, nửa mở sau 30 s.
+# Cấu hình gốc "turnstile"; HttpTurnstileAdapter tạo một breaker riêng cho mỗi cổng ("turnstile-<turnstileId>", D2).
 resilience4j:
   circuitbreaker:
-    instances:
+    configs:
       turnstile:
         sliding-window-type: COUNT_BASED
         sliding-window-size: 5
