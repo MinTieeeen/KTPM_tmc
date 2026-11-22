@@ -1,4 +1,5 @@
 // Một dòng của bảng A-02: badge trạng thái nhân viên/QR và nút Thu hồi / Cấp lại theo luật của đặc tả.
+import { RefreshCw, ShieldOff } from 'lucide-react';
 import type { EmployeeView } from '@/shared/api/centralApi';
 import { Badge } from '@/features/common/Badge';
 import { Button } from '@/features/common/Button';
@@ -21,7 +22,7 @@ function CredentialBadge({ status }: { status: EmployeeView['credentialStatus'] 
 export function EmployeeRow({ employee, onAction }: Props) {
   return (
     <tr>
-      <td>{employee.code}</td>
+      <td className={styles.code}>{employee.code}</td>
       <td>{employee.fullName}</td>
       <td>{employee.departmentName}</td>
       <td>{employee.factoryId}</td>
@@ -29,16 +30,16 @@ export function EmployeeRow({ employee, onAction }: Props) {
       <td>
         <CredentialBadge status={employee.credentialStatus} />
       </td>
-      <td>{formatDate(employee.issuedAt)}</td>
+      <td className={styles.muted}>{formatDate(employee.issuedAt)}</td>
       <td>
         <div className={styles.actions}>
           {employee.credentialStatus === 'ACTIVE' && (
-            <Button variant="danger" small onClick={() => onAction('revoke', employee)}>
+            <Button variant="dangerSoft" small icon={ShieldOff} onClick={() => onAction('revoke', employee)}>
               Thu hồi
             </Button>
           )}
           {employee.active && (
-            <Button variant="secondary" small onClick={() => onAction('issue', employee)}>
+            <Button variant="secondary" small icon={RefreshCw} onClick={() => onAction('issue', employee)}>
               Cấp lại
             </Button>
           )}

@@ -4,7 +4,7 @@ import type { LucideIcon } from 'lucide-react';
 import styles from './Button.module.css';
 import { Spinner } from './Spinner';
 
-type Variant = 'primary' | 'secondary' | 'danger' | 'ghost';
+type Variant = 'primary' | 'secondary' | 'danger' | 'dangerSoft' | 'ghost';
 
 interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;

@@ -1,11 +1,12 @@
 // A-04 Tab Trạm – docs/web/screens/A-04-stations-tab.md (nhóm theo nhà máy, làm mới 5 s, giữ dữ liệu cũ khi lỗi).
+import { Activity, Factory, RefreshCw, WifiOff } from 'lucide-react';
 import { useMemo } from 'react';
 import type { StationView } from '@/shared/api/centralApi';
 import { Alert } from '@/features/common/Alert';
 import { Badge } from '@/features/common/Badge';
 import { Button } from '@/features/common/Button';
 import { factoryName, formatRelative, formatShortTime, formatTime } from '@/features/common/format';
-import { Spinner } from '@/features/common/Spinner';
+import { Skeleton } from '@/features/common/Skeleton';
 import { useNow } from '@/features/common/useNow';
 import styles from './Admin.module.css';
 import { useStations } from './useStations';
@@ -42,61 +43,88 @@ export function StationsTab() {
     return query.isError ? (
       <div className={styles.errorBox}>
         <Alert kind="error">Không tải được danh sách trạm.</Alert>
-        <Button variant="secondary" onClick={() => void query.refetch()}>
+        <Button variant="secondary" icon={RefreshCw} onClick={() => void query.refetch()}>
           Thử lại
         </Button>
       </div>
     ) : (
-      <Spinner />
+      <div className={styles.groups} aria-busy="true" role="status" aria-label="Đang tải danh sách trạm">
+        {[0, 1].map((i) => (
+          <div key={i} className={styles.group}>
+            <div className={styles.groupHead}>
+              <Skeleton width={38} height={38} />
+              <Skeleton width={220} height={18} />
+            </div>
+          </div>
+        ))}
+      </div>
     );
   }
 
   return (
     <section aria-label="Trạm">
       <p className={styles.refreshInfo}>
-        Tự làm mới mỗi 5 giây · cập nhật lúc {formatTime(query.dataUpdatedAt)}
+        <RefreshCw size={13} aria-hidden="true" />
+        <span>Tự làm mới mỗi 5 giây · cập nhật lúc {formatTime(query.dataUpdatedAt)}</span>
       </p>
       {query.isError && (
-        <Alert kind="notice" className={styles.refreshInfo}>
+        <Alert kind="notice" className={styles.staleAlert}>
           Không tải được dữ liệu – đang hiển thị dữ liệu lúc {formatTime(query.dataUpdatedAt)}
         </Alert>
       )}
-      {groups.map(([factoryId, stations]) => {
-        const gate = stations[0]!;
-        return (
-          <div key={factoryId} className={styles.group} data-testid={`group-${factoryId}`}>
-            <h2 className={styles.groupHeader}>
-              Nhà máy {factoryName(factoryId)} · {gate.gateId}
-              {gate.online ? <Badge color="green">ONLINE</Badge> : <Badge color="red">OFFLINE</Badge>}
-            </h2>
-            <p className={`${styles.syncInfo} ${gate.online ? '' : styles.syncOffline}`}>{syncText(gate, nowMs)}</p>
-            <div className={styles.tableWrap}>
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th>Trạm</th>
-                    <th>Chiều</th>
-                    <th>Trạng thái trạm</th>
-                    <th>Cổng xoay</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {stations.map((s) => (
-                    <tr key={s.stationId}>
-                      <td>{s.stationId}</td>
-                      <td>{s.direction === 'IN' ? 'VÀO' : 'RA'}</td>
-                      <td>{s.enabled ? 'Bật' : 'Tắt'}</td>
-                      <td>
-                        <TurnstileBadge status={s.turnstileStatus} />
-                      </td>
+      <div className={styles.groups}>
+        {groups.map(([factoryId, stations]) => {
+          const gate = stations[0]!;
+          const SyncIcon = gate.online ? Activity : WifiOff;
+          return (
+            <div key={factoryId} className={styles.group} data-testid={`group-${factoryId}`}>
+              <div className={styles.groupHead}>
+                <span className={styles.factoryIcon}>
+                  <Factory size={20} aria-hidden="true" />
+                </span>
+                <h2 className={styles.groupTitle}>
+                  Nhà máy {factoryName(factoryId)} · {gate.gateId}
+                </h2>
+                {gate.online ? (
+                  <Badge color="green" pulse>
+                    ONLINE
+                  </Badge>
+                ) : (
+                  <Badge color="red">OFFLINE</Badge>
+                )}
+                <p className={`${styles.syncInfo} ${gate.online ? '' : styles.syncOffline}`}>
+                  <SyncIcon size={14} aria-hidden="true" />
+                  <span>{syncText(gate, nowMs)}</span>
+                </p>
+              </div>
+              <div className={styles.groupTable}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>Trạm</th>
+                      <th>Chiều</th>
+                      <th>Trạng thái trạm</th>
+                      <th>Cổng xoay</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {stations.map((s) => (
+                      <tr key={s.stationId}>
+                        <td className={styles.code}>{s.stationId}</td>
+                        <td>{s.direction === 'IN' ? 'VÀO' : 'RA'}</td>
+                        <td>{s.enabled ? 'Bật' : 'Tắt'}</td>
+                        <td>
+                          <TurnstileBadge status={s.turnstileStatus} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </section>
   );
 }

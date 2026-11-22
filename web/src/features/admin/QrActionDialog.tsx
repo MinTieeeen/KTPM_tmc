@@ -1,4 +1,5 @@
 // A-03 Hộp thoại thao tác QR – docs/web/screens/A-03-qr-action-dialog.md (thu hồi cần lý do 3–200 ký tự).
+import { RefreshCw, ShieldOff } from 'lucide-react';
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { asApiError, networkError } from '@/shared/api/apiError';
@@ -16,6 +17,7 @@ import { useReloadEmployees, useReplaceEmployee } from './useEmployees';
 
 const REASON_MIN = 3;
 const REASON_MAX = 200;
+const REASON_WARN_AT = 180;
 
 interface Props {
   action: QrAction;
@@ -36,6 +38,7 @@ export function QrActionDialog({ action, employee, onClose }: Props) {
   const isRevoke = action === 'revoke';
   const trimmed = reason.trim();
   const reasonValid = trimmed.length >= REASON_MIN && trimmed.length <= REASON_MAX;
+  const reasonInvalid = touched && !reasonValid;
 
   const mutation = useMutation({
     mutationFn: () => (isRevoke ? centralApi.revokeQr(employee.code, trimmed) : centralApi.issueQr(employee.code)),
@@ -50,7 +53,7 @@ export function QrActionDialog({ action, employee, onClose }: Props) {
       const apiError = asApiError(err) ?? networkError();
       const text = adminErrorText(apiError);
       if (shouldReloadEmployees(apiError)) {
-        toast.show(text);
+        toast.show(text, 'error');
         void reloadEmployees();
         onClose();
         return;
@@ -68,19 +71,26 @@ export function QrActionDialog({ action, employee, onClose }: Props) {
   };
 
   const hasCredential = employee.credentialStatus !== undefined;
+  const counterClass = [
+    styles.counter,
+    reason.length > REASON_MAX ? styles.counterOver : reason.length >= REASON_WARN_AT ? styles.counterWarn : '',
+  ].join(' ');
 
   return (
     <Dialog
       title={isRevoke ? 'Thu hồi mã QR' : 'Cấp lại mã QR'}
+      icon={isRevoke ? ShieldOff : RefreshCw}
+      tone={isRevoke ? 'danger' : 'primary'}
       onClose={onClose}
       locked={sending}
       footer={
         <>
-          <Button variant="ghost" onClick={onClose} disabled={sending}>
+          <Button variant="secondary" onClick={onClose} disabled={sending}>
             Hủy
           </Button>
           <Button
             variant={isRevoke ? 'danger' : 'primary'}
+            icon={isRevoke ? ShieldOff : RefreshCw}
             onClick={submit}
             disabled={isRevoke && !reasonValid}
             loading={sending}
@@ -91,7 +101,7 @@ export function QrActionDialog({ action, employee, onClose }: Props) {
       }
     >
       <div className={styles.dialogStack}>
-        <div>
+        <div className={styles.person}>
           <p className={styles.dialogInfo}>
             {employee.code} – {employee.fullName} · {employee.departmentName} ({employee.factoryId})
           </p>
@@ -107,19 +117,19 @@ export function QrActionDialog({ action, employee, onClose }: Props) {
             <label className={styles.reasonLabel}>
               Lý do thu hồi *
               <textarea
-                className={`${styles.textarea} ${touched && !reasonValid ? styles.textareaInvalid : ''}`}
+                className={`${styles.textarea} ${reasonInvalid ? styles.textareaInvalid : ''}`}
                 value={reason}
-                aria-invalid={touched && !reasonValid ? true : undefined}
+                aria-invalid={reasonInvalid ? true : undefined}
                 onChange={(e) => {
                   setReason(e.target.value);
                   setTouched(true);
                 }}
               />
-              <span className={styles.counter}>
+              <span className={counterClass}>
                 {reason.length}/{REASON_MAX}
               </span>
             </label>
-            {touched && !reasonValid && (
+            {reasonInvalid && (
               <p className={styles.fieldError} role="alert">
                 Lý do cần từ {REASON_MIN} đến {REASON_MAX} ký tự
               </p>

@@ -1,9 +1,11 @@
 // A-02 Tab Nhân viên – docs/web/screens/A-02-employees-tab.md (tìm kiếm debounce 300 ms, lọc bộ phận).
+import { ChevronDown, RefreshCw, Search, SearchX, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { EmployeeView } from '@/shared/api/centralApi';
 import { Alert } from '@/features/common/Alert';
 import { Button } from '@/features/common/Button';
-import { Spinner } from '@/features/common/Spinner';
+import { EmptyState } from '@/features/common/EmptyState';
+import { Skeleton } from '@/features/common/Skeleton';
 import { useDebouncedValue } from '@/features/common/useDebouncedValue';
 import styles from './Admin.module.css';
 import { EmployeeRow } from './EmployeeRow';
@@ -12,11 +14,14 @@ import { QrActionDialog } from './QrActionDialog';
 import { useEmployees } from './useEmployees';
 
 const SEARCH_DEBOUNCE_MS = 300;
+const SKELETON_ROWS = 8;
 
 interface DialogTarget {
   action: QrAction;
   employee: EmployeeView;
 }
+
+const HEADERS = ['Mã', 'Họ tên', 'Bộ phận', 'Nhà máy', 'Nhân viên', 'Mã QR', 'Ngày cấp', 'Thao tác'];
 
 export function EmployeesTab() {
   const [search, setSearch] = useState('');
@@ -39,55 +44,82 @@ export function EmployeesTab() {
   return (
     <section aria-label="Nhân viên">
       <div className={styles.toolbar}>
-        <input
-          type="search"
-          className={styles.search}
-          placeholder="Tìm theo mã hoặc họ tên…"
-          aria-label="Tìm nhân viên"
-          maxLength={100}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <select
-          className={styles.select}
-          aria-label="Lọc bộ phận"
-          value={department}
-          onChange={(e) => setDepartment(e.target.value)}
-        >
-          <option value="">Tất cả bộ phận</option>
-          {departments.map(([id, name]) => (
-            <option key={id} value={id}>
-              {name}
-            </option>
-          ))}
-        </select>
+        <div className={styles.searchWrap}>
+          <Search className={styles.searchIcon} size={17} aria-hidden="true" />
+          <input
+            type="search"
+            className={styles.search}
+            placeholder="Tìm theo mã hoặc họ tên…"
+            aria-label="Tìm nhân viên"
+            maxLength={100}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          {search && (
+            <button type="button" className={styles.clear} aria-label="Xóa tìm kiếm" onClick={() => setSearch('')}>
+              <X size={16} aria-hidden="true" />
+            </button>
+          )}
+        </div>
+        <div className={styles.selectWrap}>
+          <select
+            className={styles.select}
+            aria-label="Lọc bộ phận"
+            value={department}
+            onChange={(e) => setDepartment(e.target.value)}
+          >
+            <option value="">Tất cả bộ phận</option>
+            {departments.map(([id, name]) => (
+              <option key={id} value={id}>
+                {name}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className={styles.selectIcon} size={16} aria-hidden="true" />
+        </div>
         {employees && <span className={styles.count}>{employees.length} nhân viên</span>}
       </div>
 
       {filtered.isError && !employees ? (
         <div className={styles.errorBox}>
           <Alert kind="error">Không tải được danh sách nhân viên.</Alert>
-          <Button variant="secondary" onClick={() => void filtered.refetch()}>
+          <Button variant="secondary" icon={RefreshCw} onClick={() => void filtered.refetch()}>
             Thử lại
           </Button>
         </div>
       ) : !employees ? (
-        <Spinner />
-      ) : employees.length === 0 ? (
-        <div className={styles.empty}>Không có nhân viên nào khớp bộ lọc</div>
-      ) : (
-        <div className={styles.tableWrap}>
+        <div className={styles.tableCard} aria-busy="true" role="status" aria-label="Đang tải danh sách nhân viên">
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>Mã</th>
-                <th>Họ tên</th>
-                <th>Bộ phận</th>
-                <th>Nhà máy</th>
-                <th>Nhân viên</th>
-                <th>Mã QR</th>
-                <th>Ngày cấp</th>
-                <th>Thao tác</th>
+                {HEADERS.map((h) => (
+                  <th key={h}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: SKELETON_ROWS }, (_, i) => (
+                <tr key={i}>
+                  {HEADERS.map((h) => (
+                    <td key={h}>
+                      <Skeleton width={h === 'Họ tên' ? 120 : 64} />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : employees.length === 0 ? (
+        <EmptyState icon={SearchX}>Không có nhân viên nào khớp bộ lọc</EmptyState>
+      ) : (
+        <div className={`${styles.tableCard} ${styles.tableCardTall}`}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                {HEADERS.map((h) => (
+                  <th key={h}>{h}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
