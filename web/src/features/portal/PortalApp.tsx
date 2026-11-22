@@ -5,10 +5,12 @@ import { useAuth } from '@/features/auth/authContext';
 import { NoQrNotice } from './NoQrNotice';
 import { QrPage } from './QrPage';
 import { useQrToken } from './useQrToken';
+import { useRecentCodes } from './useRecentCodes';
 
 function QrScreen() {
   const { state } = useAuth();
   const query = useQrToken();
+  const recent = useRecentCodes(query.data, query.dataUpdatedAt);
   if (state.status !== 'authenticated') return null;
 
   const error = asApiError(query.error);
@@ -21,6 +23,7 @@ function QrScreen() {
       receivedAtMs={query.dataUpdatedAt}
       refreshFailed={query.isError}
       refreshing={query.isFetching}
+      recent={recent}
     />
   );
 }
