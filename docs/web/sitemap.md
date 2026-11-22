@@ -56,7 +56,8 @@ TMC Web
     ├── AU-02 Không có quyền truy cập          vai trò ≠ ADMIN
     └── A-01 Khung trang quản trị «layout»     đã đăng nhập
         ├── A-02 Tab Nhân viên  #/employees    (mặc định)
-        │   └── A-03 Hộp thoại thao tác QR     bấm Thu hồi / Cấp lại
+        │   ├── A-03 Hộp thoại thao tác QR     bấm Thu hồi / Cấp lại
+        │   └── A-05 Hộp thoại thao tác hàng loạt  chọn nhiều nhân viên rồi bấm Thu hồi mã / Cấp lại mã
         └── A-04 Tab Trạm       #/stations
 ```
 
@@ -76,6 +77,7 @@ TMC Web
 | A-01 | Khung trang quản trị | `admin.html` | layout | Quản trị viên | Should | [`GET /auth/me`](../api/central.md#2-get-authme) | FR-25 | [A-01-admin-shell.md](screens/A-01-admin-shell.md) |
 | A-02 | Tab Nhân viên | `admin.html#/employees` | tab | Quản trị viên | Should | [`GET /employees`](../api/central.md#4-get-employees) | FR-02, FR-04, D3 | [A-02-employees-tab.md](screens/A-02-employees-tab.md) |
 | A-03 | Hộp thoại thao tác QR | dialog trên A-02 | dialog | Quản trị viên | Should | [`POST …/qr/revoke`](../api/central.md#6-post-employeescodeqrrevoke), [`POST …/qr/issue`](../api/central.md#5-post-employeescodeqrissue) | FR-04, INV-01, NFR-SEC-06, D3, T2 | [A-03-qr-action-dialog.md](screens/A-03-qr-action-dialog.md) |
+| A-05 | Hộp thoại thao tác hàng loạt | dialog trên A-02 | dialog | Quản trị viên | Could | (dùng lại [`POST …/qr/revoke`](../api/central.md#6-post-employeescodeqrrevoke) và [`POST …/qr/issue`](../api/central.md#5-post-employeescodeqrissue), gọi lần lượt từng người) | FR-04, INV-01, NFR-SEC-06, D3 | [A-05-bulk-action-dialog.md](screens/A-05-bulk-action-dialog.md) |
 | A-04 | Tab Trạm | `admin.html#/stations` | tab | Quản trị viên | Should | [`GET /stations`](../api/central.md#7-get-stations) | FR-09, NFR-AVL-04, D4 | [A-04-stations-tab.md](screens/A-04-stations-tab.md) |
 
 Loại: **screen** chiếm cả trang · **overlay** phủ lên màn hình khác trong thời gian ngắn ·
@@ -108,6 +110,8 @@ mở trang ─► có token trong sessionStorage?
 | A-01 | Chọn tab | A-02 (`#/employees`) / A-04 (`#/stations`) |
 | A-02 | Bấm **Thu hồi** / **Cấp lại** | A-03 |
 | A-03 | Xác nhận thành công / Hủy | A-02 (cập nhật dòng) |
+| A-02 | Bấm **Thu hồi mã (k)** / **Cấp lại mã (m)** trong khung "Đã chọn" | A-05 |
+| A-05 | Đóng (sau khi xong hoặc Hủy) | A-02 (người đã xử lý xong được bỏ khỏi lựa chọn) |
 | K-01 | Nhận chuỗi từ máy quét / webcam | K-02 |
 | K-02 | Sau 3 s | K-01 |
 | K-01 | `stationId` không có trong `GET /status.turnstiles` | K-03 |
@@ -119,7 +123,7 @@ mở trang ─► có token trong sessionStorage?
 | K-01 … K-05 | ✔ (LAN) | ✔ | ✔ |
 | AU-01 | ✔ | ✔ | ✔ |
 | P-01, P-02 | → AU-01 | ✔ | → AU-02 |
-| A-01 … A-04 | → AU-01 | → AU-02 | ✔ |
+| A-01 … A-05 | → AU-01 | → AU-02 | ✔ |
 
 Ẩn/hiện chỉ để tiện dùng; quyền thật được backend kiểm tra ở mọi API (DP-10).
 
@@ -150,6 +154,7 @@ Nguồn: [web.drawio](../drawio/web.drawio), tab `frontend-backend` (UML compone
 | A-02 | `centralApi.listEmployees(department, q)` | `GET /employees` | Central · `employee` · `EmployeeController` | khi đổi bộ lọc (debounce 300 ms) |
 | A-03 | `centralApi.revokeQr(code, reason)` | `POST /employees/{code}/qr/revoke` | Central · `employee` · `EmployeeController` | theo thao tác |
 | A-03 | `centralApi.issueQr(code)` | `POST /employees/{code}/qr/issue` | Central · `employee` · `EmployeeController` | theo thao tác |
+| A-05 | `centralApi.revokeQr(code, reason)` / `centralApi.issueQr(code)` lần lượt từng người | `POST /employees/{code}/qr/revoke` · `POST /employees/{code}/qr/issue` | Central · `employee` · `EmployeeController` | tuần tự, một request mỗi người |
 | A-04 | `centralApi.listStations()` | `GET /stations` | Central · `station` · `StationController` | mỗi 5 s |
 
 ## 7. Màn hình ngoài MVP

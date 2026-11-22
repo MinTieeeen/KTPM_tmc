@@ -19,6 +19,7 @@
 | A-01 | [Khung trang quản trị](A-01-admin-shell.md) | `admin.html` | layout | Should | Đã thiết kế · [wireframe](../../images/screens/A-01-admin-shell.png) |
 | A-02 | [Tab Nhân viên](A-02-employees-tab.md) | `admin.html#/employees` | tab | Should | Đã thiết kế · [wireframe](../../images/screens/A-02-employees-tab.png) |
 | A-03 | [Hộp thoại thao tác QR](A-03-qr-action-dialog.md) | dialog trên `admin.html#/employees` | dialog | Should | Đã thiết kế · [wireframe](../../images/screens/A-03-qr-action-dialog.png) |
+| A-05 | [Hộp thoại thao tác hàng loạt](A-05-bulk-action-dialog.md) | dialog trên `admin.html#/employees` | dialog | Could | Đã hiện thực · [ảnh chụp](../../images/screens/A-05-bulk-action-dialog.png) (chưa vẽ wireframe) |
 | A-04 | [Tab Trạm](A-04-stations-tab.md) | `admin.html#/stations` | tab | Should | Đã thiết kế · [wireframe](../../images/screens/A-04-stations-tab.png) |
 
 ## Khung của một file màn hình
