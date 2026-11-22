@@ -27,7 +27,18 @@ Mã nguồn Milestone 2 của bài tập lớn Kiến trúc phần mềm (CO3017
 
 C4, C5, C6, C8, C9 (chốt kỳ, HR/Payroll, báo cáo, audit, cấu hình) có trong báo cáo nhưng **không thuộc phạm vi MVP**.
 
-Tài khoản demo (seed): nhân viên `e0001` … `e0020`, quản trị `admin`; mật khẩu do migration seed quy định (xem `docs/api/README.md` § 3.1).
+### Tài khoản demo
+
+Do migration `V2__seed_demo.sql` tạo sẵn; **mọi tài khoản dùng chung mật khẩu `Demo@2026`** (chỉ dành cho demo, không dùng ở nơi khác; chi tiết ở `docs/api/README.md` § 3.1).
+
+| Vai trò | Tài khoản | Đăng nhập tại | Kết quả |
+|---|---|---|---|
+| Quản trị | `admin` | `/admin.html` | Admin: danh sách nhân viên (tìm kiếm, lọc, chọn nhiều, thu hồi / cấp lại QR, thao tác hàng loạt) và tab Trạm |
+| Nhân viên có mã QR | `e0001` … `e0018` | `/portal.html` | Portal: mã QR động, tự đổi mỗi 30 giây |
+| Nhân viên đã bị thu hồi mã | `e0020` | `/portal.html` | Thông báo "Mã QR đã bị thu hồi" (không hiện QR) |
+| Nhân viên đã nghỉ việc | `e0019` | — | Không đăng nhập được (tài khoản bị khóa) |
+
+Đăng nhập sai vai trò (ví dụ `e0001` vào `/admin.html`) sẽ hiện "Không có quyền truy cập". Trang đăng nhập có ô **Ghi nhớ đăng nhập** (mặc định tắt: giữ phiên tối đa 8 giờ sau khi đóng tab; không bật trên máy dùng chung) và nút đổi giao diện Sáng / Tối ở góc trên.
 
 Bên trong mỗi package có 4 tầng `api / application / domain / infrastructure`. `domain` là Java thuần, không phụ thuộc Spring hay `infrastructure` (kiểm tra bằng ArchUnit và Spring Modulith trong CI).
 
@@ -67,7 +78,14 @@ mvn -pl gate-agent spring-boot:run -Dspring-boot.run.profiles=demo
 # Frontend (proxy tới :8081 và :8080, xem web/vite.config.ts)
 cd web && npm install && npm run dev
 # http://localhost:5173/kiosk.html?station=BD-IN-01 · /portal.html · /admin.html
+
+# Frontend KHÔNG cần backend: dữ liệu giả (MSW) theo seed, cùng tài khoản và mật khẩu ở trên
+cd web && VITE_USE_MOCKS=1 npm run dev          # Windows PowerShell: $env:VITE_USE_MOCKS='1'; npm run dev
+# Kiểm tra giao diện giống CI
+cd web && npm run lint && npm run test && npm run build
 ```
+
+Ở chế độ mock, dữ liệu nằm trong bộ nhớ trình duyệt (tải lại trang là về trạng thái ban đầu) và tab Trạm luôn ONLINE.
 
 ## Chạy toàn bộ bằng Docker
 
