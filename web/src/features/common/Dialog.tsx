@@ -11,11 +11,13 @@ interface Props {
   locked?: boolean;
   icon?: LucideIcon;
   tone?: 'danger' | 'primary';
+  /** Hộp rộng hơn (danh sách nhiều dòng, vd. thao tác hàng loạt). */
+  wide?: boolean;
   children: ReactNode;
   footer?: ReactNode;
 }
 
-export function Dialog({ title, onClose, locked = false, icon: Icon, tone = 'primary', children, footer }: Props) {
+export function Dialog({ title, onClose, locked = false, icon: Icon, tone = 'primary', wide = false, children, footer }: Props) {
   const titleId = useId();
   const boxRef = useRef<HTMLDivElement>(null);
   const lockedRef = useRef(locked);
@@ -45,7 +47,7 @@ export function Dialog({ title, onClose, locked = false, icon: Icon, tone = 'pri
     >
       <div
         ref={boxRef}
-        className={styles.dialog}
+        className={`${styles.dialog} ${wide ? styles.wide : ''}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
@@ -64,7 +66,7 @@ export function Dialog({ title, onClose, locked = false, icon: Icon, tone = 'pri
             {title}
           </h2>
         </div>
-        {children}
+        <div className={styles.body}>{children}</div>
         {footer && <div className={styles.footer}>{footer}</div>}
       </div>
     </div>

@@ -16,7 +16,9 @@
   width: 100%;
   max-width: 480px;
   max-height: 90vh;
-  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   padding: var(--space-5);
   background: var(--surface);
   color: var(--text);
@@ -24,6 +26,10 @@
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-3);
   animation: pop-in 0.18s ease-out;
+}
+
+.wide {
+  max-width: 640px;
 }
 
 .dialog:focus {
@@ -90,11 +96,23 @@
   cursor: not-allowed;
 }
 
+/* Chỉ phần thân cuộn; tiêu đề và chân hộp (nút xác nhận) luôn nhìn thấy dù nội dung dài. */
+.body {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0 calc(var(--space-2) * -1);
+  padding: 4px var(--space-2) 6px;
+  overflow-y: auto;
+}
+
 .footer {
   display: flex;
+  flex: none;
   justify-content: flex-end;
   gap: var(--space-3);
-  margin-top: var(--space-5);
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
 }
 
 @keyframes fade-in {
