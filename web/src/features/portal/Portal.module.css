@@ -112,8 +112,27 @@
   font-variant-numeric: tabular-nums;
 }
 
-.countdownLow {
+.expiry {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: var(--space-3);
+  font-size: 13px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.expiryLow {
   color: var(--warning-fg);
+  font-weight: 600;
+}
+
+.caption {
+  max-width: 300px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
 }
 
 .bar {

@@ -15,6 +15,7 @@ beforeEach(() => {
   mock.backend.calls = {};
   mock.backend.qrTtlSec = 60;
   mock.backend.qrRefreshAfterSec = 30;
+  mock.backend.clockSkewMs = 0;
   writeText.mockReset().mockResolvedValue(undefined);
   Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
 });
@@ -32,15 +33,31 @@ describe('P-01 Mã QR cá nhân', () => {
     await screen.findByText('Nhân viên E0001');
     expect(screen.getByText('tài khoản e0001')).toBeTruthy();
     await waitFor(() => expect(hasQr(container)).toBe(true));
-    expect(screen.getByText(/Hết hạn sau \d+ giây/)).toBeTruthy();
-    expect(screen.getByText('Tự làm mới mỗi 30 giây')).toBeTruthy();
+    expect(screen.getByText(/Mã mới sau \d+ giây/)).toBeTruthy();
+    expect(screen.getByText(/Hết hạn sau \d+ giây \(lúc \d{2}:\d{2}:\d{2}\)/)).toBeTruthy();
+    expect(screen.getByText(/Mã tự đổi mỗi 30 giây\. Mã cũ vẫn quét được đến khi hết hạn/)).toBeTruthy();
   });
 
-  it('đếm ngược không bao giờ vượt thời hạn thật của mã (60 giây)', async () => {
+  it('hai đồng hồ không vượt thời hạn thật: đổi mã ≤ 30 giây, hết hạn ≤ 60 giây', async () => {
+    loginAs('e0001');
+    renderApp(<PortalApp />);
+    const seconds = async (pattern: RegExp) =>
+      Number(/(\d+)/.exec((await screen.findByText(pattern)).textContent!)![1]);
+    expect(await seconds(/Mã mới sau \d+ giây/)).toBeLessThanOrEqual(30);
+    expect(await seconds(/Hết hạn sau \d+ giây/)).toBeLessThanOrEqual(60);
+  });
+
+  it.each([
+    ['nhanh hơn thiết bị 5 giây', 5_000],
+    ['chậm hơn thiết bị 20 giây', -20_000],
+  ])('đồng hồ máy chủ %s: "Hết hạn sau" vẫn đúng 58–60 giây nhờ hiệu chỉnh theo header Date', async (_name, skew) => {
+    mock.backend.clockSkewMs = skew;
     loginAs('e0001');
     renderApp(<PortalApp />);
     const text = (await screen.findByText(/Hết hạn sau \d+ giây/)).textContent!;
-    expect(Number(/(\d+)/.exec(text)![1])).toBeLessThanOrEqual(60);
+    const seconds = Number(/(\d+)/.exec(text)![1]);
+    expect(seconds).toBeGreaterThanOrEqual(58);
+    expect(seconds).toBeLessThanOrEqual(60);
   });
 
   it('mã đổi sau mỗi chu kỳ làm mới', async () => {

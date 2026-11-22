@@ -1,7 +1,7 @@
 // P-01 Mã QR cá nhân – docs/web/screens/P-01-qr-code.md (QR level M, đếm ngược, sao chép chuỗi).
-import { Copy, RefreshCw } from 'lucide-react';
+import { Copy } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import type { CurrentUser, QrTokenResponse } from '@/shared/api/centralApi';
+import type { CurrentUser, QrToken } from '@/shared/api/centralApi';
 import { Alert } from '@/features/common/Alert';
 import { Button } from '@/features/common/Button';
 import { Spinner } from '@/features/common/Spinner';
@@ -15,7 +15,7 @@ import { QrCountdown } from './QrCountdown';
 
 interface Props {
   user: CurrentUser;
-  token: QrTokenResponse | undefined;
+  token: QrToken | undefined;
   receivedAtMs: number;
   /** Lần làm mới gần nhất lỗi (mạng/5xx). */
   refreshFailed: boolean;
@@ -29,7 +29,8 @@ export function QrPage({ user, token, receivedAtMs, refreshFailed, refreshing = 
   const copy = useCopy();
   const toast = useToast();
 
-  const expiresAtMs = token ? Date.parse(token.expiresAt) : 0;
+  // expiresAt theo đồng hồ máy chủ; quy về đồng hồ thiết bị để đếm ngược đúng dù hai đồng hồ lệch nhau.
+  const expiresAtMs = token ? Date.parse(token.expiresAt) - token.clockOffsetMs : 0;
   const visibleToken = token && nowMs < expiresAtMs ? token : undefined;
 
   const onCopy = async () => {
@@ -50,10 +51,16 @@ export function QrPage({ user, token, receivedAtMs, refreshFailed, refreshing = 
           <div className={styles.qrBox} data-testid="qr-code">
             <QRCodeSVG value={visibleToken.raw} size={200} level="M" marginSize={0} title="Mã QR chấm công" />
           </div>
-          <QrCountdown expiresAtMs={expiresAtMs} receivedAtMs={receivedAtMs} nowMs={nowMs} />
-          <p className={styles.hint}>
-            <RefreshCw size={13} className={refreshing ? styles.spin : undefined} aria-hidden="true" />
-            Tự làm mới mỗi {visibleToken.refreshAfterSec} giây
+          <QrCountdown
+            expiresAtMs={expiresAtMs}
+            receivedAtMs={receivedAtMs}
+            refreshAfterSec={visibleToken.refreshAfterSec}
+            nowMs={nowMs}
+            refreshing={refreshing}
+          />
+          <p className={styles.caption}>
+            Mã tự đổi mỗi {visibleToken.refreshAfterSec} giây. Mã cũ vẫn quét được đến khi hết hạn, nhưng mỗi mã chỉ
+            dùng được một lần.
           </p>
           <Button variant="secondary" icon={Copy} onClick={onCopy}>
             Sao chép chuỗi
