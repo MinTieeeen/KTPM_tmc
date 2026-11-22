@@ -17,6 +17,7 @@ export function LoginForm({ page }: { page: Page }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [remember, setRemember] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [passwordInvalid, setPasswordInvalid] = useState(false);
@@ -38,7 +39,7 @@ export function LoginForm({ page }: { page: Page }) {
     setError(null);
     setPasswordInvalid(false);
     try {
-      await login(username, password);
+      await login(username, password, remember);
     } catch (err) {
       const apiError = asApiError(err) ?? networkError();
       setError(loginErrorText(apiError));
@@ -107,6 +108,18 @@ export function LoginForm({ page }: { page: Page }) {
               </button>
             </span>
           </label>
+          <div className={styles.rememberBlock}>
+            <label className={styles.remember}>
+              <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+              Ghi nhớ đăng nhập
+            </label>
+            {remember && (
+              <p className={styles.rememberHint}>
+                Giữ đăng nhập trên thiết bị này tối đa 8 giờ, cho tới khi bạn đăng xuất. Không nên bật trên máy dùng
+                chung.
+              </p>
+            )}
+          </div>
           {error && <Alert kind="error">{error}</Alert>}
           <Button
             type="submit"
@@ -120,7 +133,7 @@ export function LoginForm({ page }: { page: Page }) {
           </Button>
           <p className={styles.note}>
             <Lock size={12} aria-hidden="true" />
-            Phiên đăng nhập kết thúc khi đóng tab
+            {remember ? 'Phiên được giữ khi đóng tab' : 'Phiên đăng nhập kết thúc khi đóng tab'}
           </p>
         </form>
       </div>

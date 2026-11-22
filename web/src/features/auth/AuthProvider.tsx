@@ -53,9 +53,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [queryClient]);
 
-  const login = useCallback(async (username: string, password: string) => {
+  const login = useCallback(async (username: string, password: string, remember = false) => {
     const result = await centralApi.login(username, password);
-    authSession.setToken(result.accessToken);
+    authSession.setToken(result.accessToken, { remember, expiresAt: result.expiresAt });
     try {
       const user = await centralApi.me();
       setState({ status: 'authenticated', user, forbidden: false });

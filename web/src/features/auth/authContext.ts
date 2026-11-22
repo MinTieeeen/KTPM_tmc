@@ -11,7 +11,7 @@ export type AuthState =
 
 export interface AuthApi {
   state: AuthState;
-  login: (username: string, password: string) => Promise<void>;
+  login: (username: string, password: string, remember?: boolean) => Promise<void>;
   logout: () => void;
   /** Thử lại GET /auth/me sau lỗi mạng/5xx. */
   retry: () => void;

@@ -26,4 +26,5 @@ export function loginAs(username: string): void {
 
 export function resetSession(): void {
   sessionStorage.clear();
+  localStorage.clear();
 }
