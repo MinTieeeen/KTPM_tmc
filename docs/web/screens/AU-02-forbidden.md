@@ -55,10 +55,11 @@ Nguồn: [wireframes.drawio](../../drawio/wireframes.drawio), tab `AU-02 Không 
 
 | # | Thành phần | Loại | Dữ liệu (nguồn) | Cách hiển thị |
 |---|---|---|---|---|
-| 1 | Tiêu đề | Icon ⛔ + heading | Tĩnh | 24 px đậm: "Không có quyền truy cập". |
+| 1 | Tiêu đề | Icon khiên cảnh báo (ShieldAlert) + heading | Tĩnh | 24 px đậm: "Không có quyền truy cập". |
 | 2 | Thông tin tài khoản | Text | `GET /auth/me`: `username`, `role`; tên trang | "Tài khoản {username} ({role}) không được dùng trang {Quản trị / Portal nhân viên}." |
 | 3 | Gợi ý | Text | Trang hiện tại | 13 px xám: "Đăng nhập bằng tài khoản có vai trò ADMIN" (Admin) / "EMPLOYEE" (Portal). |
 | 4 | Nút Đăng xuất | Button primary | – | Căn giữa dưới nội dung. |
+| 5 | Nút đổi giao diện | Nhóm 3 nút (Sáng / Tối / Theo hệ thống) | `localStorage` khóa `tmc.theme` | Góc trên bên phải trang; mặc định theo hệ điều hành, lựa chọn được lưu và áp ngay khi tải trang (không nhấp nháy). Mã QR luôn đen trên nền trắng ở cả hai chế độ. |
 
 ### 7.3. Hành động (input → output)
 

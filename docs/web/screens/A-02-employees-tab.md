@@ -61,7 +61,7 @@ Nguồn: [wireframes.drawio](../../drawio/wireframes.drawio), tab `A-02 Tab Nhâ
 
 | # | Thành phần | Loại | Dữ liệu (nguồn) | Cách hiển thị |
 |---|---|---|---|---|
-| 1 | Ô tìm kiếm | Input search | Người dùng nhập → tham số `q` | Placeholder "Tìm theo mã hoặc họ tên…", icon 🔍, rộng 360 px; tối đa 100 ký tự. |
+| 1 | Ô tìm kiếm | Input search | Người dùng nhập → tham số `q` | Placeholder "Tìm theo mã hoặc họ tên…", icon kính lúp (Search), rộng 360 px; tối đa 100 ký tự. |
 | 2 | Lọc bộ phận | Select (dropdown) | Các cặp `departmentId`/`departmentName` khác nhau từ danh sách chưa lọc | Mục đầu "Tất cả bộ phận"; các mục sắp theo tên. |
 | 3 | Số kết quả | Text | Độ dài danh sách trả về | 13 px xám, bên phải: "{n} nhân viên". |
 | 4 | Bảng nhân viên | Table | `GET /employees` → `EmployeeView[]` | Cột: Mã · Họ tên · Bộ phận (`departmentName`) · Nhà máy · Nhân viên · Mã QR · Ngày cấp (`issuedAt`, dd/MM/yyyy giờ VN; trống nếu chưa cấp) · Thao tác. Sắp theo mã. Không phân trang. |

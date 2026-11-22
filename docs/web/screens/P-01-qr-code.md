@@ -67,9 +67,10 @@ Nguồn: [wireframes.drawio](../../drawio/wireframes.drawio), tab `P-01 Mã QR c
 | 4 | Mã QR | QR image | `GET /portal/qr-token` → `raw` | 200×200 px, mức sửa lỗi M, viền trắng 8 px, căn giữa; luôn là mã mới nhất. |
 | 5 | Đếm ngược | Progress bar + text | `expiresAt` so với giờ hiện tại | Thanh co dần (xanh; cam khi ≤ 10 s); chữ "Hết hạn sau {n} giây" cập nhật mỗi giây. |
 | 6 | Ghi chú làm mới | Text | `refreshAfterSec` | 12 px xám: "Tự làm mới mỗi {refreshAfterSec} giây". |
-| 7 | Nút Sao chép chuỗi | Button secondary | `raw` | "⧉ Sao chép chuỗi"; dùng khi kiosk không có camera. |
+| 7 | Nút Sao chép chuỗi | Button secondary | `raw` | Icon sao chép (Copy) + "Sao chép chuỗi"; dùng khi kiosk không có camera. |
 | 8 | Cảnh báo mất mạng | Alert cảnh báo | Lỗi khi làm mới | Hộp cam: "Không lấy được mã QR mới – kiểm tra kết nối". |
 | 9 | Thông báo đã sao chép | Toast | Kết quả sao chép | Viên thuốc xám đậm "Đã sao chép", tự ẩn sau 2 s. |
+| 10 | Nút đổi giao diện | Nhóm 3 nút (Sáng / Tối / Theo hệ thống) | `localStorage` khóa `tmc.theme` | Trên thanh tiêu đề, cạnh nút Đăng xuất; mặc định theo hệ điều hành, lựa chọn được lưu và áp ngay khi tải trang (không nhấp nháy). Mã QR luôn đen trên nền trắng ở cả hai chế độ. |
 
 ### 7.3. Hành động (input → output)
 
