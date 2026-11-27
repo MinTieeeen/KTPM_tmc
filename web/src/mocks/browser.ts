@@ -1,5 +1,10 @@
 // Worker MSW cho `npm run dev` với VITE_USE_MOCKS=1 (không đóng gói vào bản build).
 import { setupWorker } from 'msw/browser';
 import { createCentralHandlers, createMockBackend } from './central.handlers';
+import { createGateHandlers, createMockGate } from './gate.handlers';
 
-export const worker = setupWorker(...createCentralHandlers(createMockBackend()));
+export const worker = setupWorker(
+  ...createCentralHandlers(createMockBackend()),
+  ...createGateHandlers(createMockGate()),
+);
+

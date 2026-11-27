@@ -1,9 +1,13 @@
-// Entry của trang kiosk. Màn hình thật nằm ở src/features/kiosk (gói việc theo đặc tả mục 13).
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import '../features/common/fonts.css';
+import '../features/common/tokens.css';
+import '../features/common/global.css';
+import { enableMocksIfRequested } from '../features/common/bootstrap';
+import { KioskPage } from '../features/kiosk/KioskPage';
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <p>TMC Kiosk – chưa hiện thực</p>
-  </StrictMode>,
-);
+void enableMocksIfRequested().then(() => {
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode><KioskPage /></StrictMode>,
+  );
+});
