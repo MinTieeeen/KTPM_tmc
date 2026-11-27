@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.time.Clock;
+import java.util.Random;
 import java.util.random.RandomGenerator;
 
 /** Bean của bộ giả lập; test thay {@link Clock} và {@link RandomGenerator} để kết quả xác định (NFR-03). */
@@ -24,6 +25,6 @@ class SimConfig {
 
     @Bean
     RandomGenerator randomGenerator() {
-        return RandomGenerator.getDefault();
+        return new Random();
     }
 }

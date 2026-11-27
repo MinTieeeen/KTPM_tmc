@@ -27,21 +27,21 @@ export function CameraScanner({ onScan }: Props) {
         const { Html5Qrcode } = await import('html5-qrcode');
         if (cancelled) return;
         const scanner = new Html5Qrcode(id);
-        await scanner.start(
-          { facingMode: 'environment' },
-          { fps: 10, qrbox: 220 },
-          (raw) => {
-            if (cancelled) return;
-            const now = Date.now();
-            const repeated = raw === previous && now - lastSeen < 3000;
-            previous = raw;
-            lastSeen = now;
-            if (!repeated) {
-              callback.current(raw);
-            }
-          },
-          () => {},
-        );
+        const onDecoded = (raw: string) => {
+          if (cancelled) return;
+          const now = Date.now();
+          const repeated = raw === previous && now - lastSeen < 3000;
+          previous = raw;
+          lastSeen = now;
+          if (!repeated) {
+            callback.current(raw);
+          }
+        };
+        try {
+          await scanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: 220 }, onDecoded, () => {});
+        } catch {
+          await scanner.start({ facingMode: 'user' }, { fps: 10, qrbox: 220 }, onDecoded, () => {});
+        }
 
         stopScanner = async () => {
           await scanner.stop();
@@ -73,18 +73,23 @@ export function CameraScanner({ onScan }: Props) {
   return (
     <div className={styles.cameraBox}>
       {active && (
-        <>
-          <h2 className={styles.actionTitle} style={{ fontSize: 24 }}>
-            Đưa mã QR vào khung camera
-          </h2>
-          <div className={styles.cameraViewport}>
-            <div id={id} style={{ width: '100%', height: '100%' }} />
-          </div>
-          <div className={styles.readyBadge}>
-            <Camera size={16} style={{ color: '#16a34a' }} />
-            <span>Camera đang quét · Giữ mã QR trước ống kính</span>
-          </div>
-        </>
+        <h2 className={styles.actionTitle} style={{ fontSize: 24 }}>
+          Đưa mã QR vào khung camera
+        </h2>
+      )}
+
+      <div
+        className={styles.cameraViewport}
+        style={active ? undefined : { position: 'absolute', width: 1, height: 1, overflow: 'hidden', opacity: 0, pointerEvents: 'none' }}
+      >
+        <div id={id} style={{ width: '100%', height: '100%' }} />
+      </div>
+
+      {active && (
+        <div className={styles.readyBadge}>
+          <Camera size={16} style={{ color: '#16a34a' }} />
+          <span>Camera đang quét · Giữ mã QR trước ống kính</span>
+        </div>
       )}
 
       {error && (
